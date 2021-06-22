@@ -265,7 +265,15 @@ for f_i in range(len(filelist)):
     with GzipFile(filename) as f:
         xsec_data = json.loads(f.read().decode("utf-8"))
 
-    config = [config_i for config_i in config_list if config_i[0] == species][0]
+    config = [
+        config_i for config_i in config_list if len(config_i) and config_i[0] == species
+    ]
+
+    if len(config) == 0:
+        print(f"Warning: Ignoring species {species}. No band config available.")
+        continue
+
+    config = config[0]
 
     # loop over defined bands
     wvn_max_previous = np.inf
