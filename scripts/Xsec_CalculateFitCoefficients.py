@@ -31,10 +31,8 @@ import Xsec_aux_functions as xaf
 
 def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=True,
                               plotting=True):
-    script_path = os.getcwd()
-
     # get the files
-    filelist = glob.glob(script_path + '/' + harmonized_folder + species + '.*.json.gz')
+    filelist = glob.glob(harmonized_folder + species + '.*.json.gz')
     filelist.sort()
 
     print('let us see, what we got!')
@@ -599,7 +597,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
             print('Saving figures')
 
-            plotfolder = os.path.join(script_path, main_plot_folder, species_arts)
+            plotfolder = os.path.join(main_plot_folder, species_arts)
 
             if not os.path.exists(plotfolder):
                 os.makedirs(plotfolder)
@@ -647,8 +645,6 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         xsec_record.fitcoeffs=Xsec_processed_data_array
         xsec_record.version=2
 
-
-        coeff_folder = os.path.join(script_path, coeff_folder)
         fid = '.xml'
 
         if not os.path.exists(coeff_folder):
@@ -671,18 +667,18 @@ if __name__ == '__main__':
     # store coefficients?
     store_coeffs = True
 
+    script_path = os.path.dirname(os.path.realpath(__file__))
+
     # folder of harmonized data
-    harmonized_folder = '../data/harmonized_data/'
+    harmonized_folder = os.path.join(script_path, '../data/harmonized_data/')
 
     # main plot folder
-    main_plot_folder = '../plots/'
+    main_plot_folder = os.path.join(script_path, '../plots/')
 
     # coefficients folder
-    coeff_folder = '../coefficients/'
+    coeff_folder = os.path.join(script_path, '../coefficients/')
 
-    script_path = os.getcwd()
-
-    filelist = glob.glob(script_path + '/' + harmonized_folder + '*.json.gz')
+    filelist = glob.glob(harmonized_folder + '*.json.gz')
     filelist.sort()
 
     # Get species

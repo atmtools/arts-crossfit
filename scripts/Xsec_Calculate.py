@@ -21,11 +21,13 @@ import Xsec_aux_functions as xaf
 
 # %% paths
 
+script_path = os.path.dirname(os.path.realpath(__file__))
+
 # main plot folder
-plot_folder = '../plots/Xsecs/'
+plot_folder = os.path.join(script_path, '../plots/Xsecs/')
 
 # coefficients folder
-coeff_folder = '../coefficients/'
+coeff_folder = os.path.join(script_path, '../coefficients/')
 
 # %% Calculate and plot cross sections
 
@@ -57,5 +59,5 @@ ax0 = xaf.plot_xsec(wvn, xsec, [], ax0,
 if not os.path.exists(plot_folder):
     os.makedirs(plot_folder)
 
-plotname0 = os.path.join(plot_folder, f'{species}.absoprtion_spectrum.{pressure:.2f}Pa.{temperature:.0f}K.pdf')
+plotname0 = os.path.join(plot_folder, f'{species}.absorption_spectrum.{pressure:.2f}Pa.{temperature:.0f}K.pdf')
 fig0.savefig(plotname0)

@@ -30,19 +30,19 @@ import Xsec_aux_functions as xaf
 
 # %% constants, paths
 
+script_path = os.path.dirname(os.path.realpath(__file__))
+
 # band configuration filename
-config_name = 'band_config_list.json'
+config_name = os.path.join(script_path, 'band_config_list.json')
 
 # folder of harmonized data
-harmonized_folder = '../data/harmonized_data/'
+harmonized_folder = os.path.join(script_path, '../data/harmonized_data/')
 
 # folder of overview of rawdata and defined bands
-plot_folder = '../plots/xsec_rawdata/'
-
-script_path = os.getcwd()
+plot_folder = os.path.join(script_path, '../plots/xsec_rawdata/')
 
 # find the HitranXsec data as json file
-filelist = glob.glob(script_path + '/../data/HitranXsecJson/*json.gz')
+filelist = glob.glob(os.path.join(script_path, '../data/HitranXsecJson/*json.gz'))
 filelist.sort()
 
 counter = -1
