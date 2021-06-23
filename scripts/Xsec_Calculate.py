@@ -61,3 +61,4 @@ if not os.path.exists(plot_folder):
 
 plotname0 = os.path.join(plot_folder, f'{species}.absorption_spectrum.{pressure:.2f}Pa.{temperature:.0f}K.pdf')
 fig0.savefig(plotname0)
+print(f"Wrote {plotname0}")
