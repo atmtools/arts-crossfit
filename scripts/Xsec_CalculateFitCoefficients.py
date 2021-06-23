@@ -18,6 +18,7 @@ Set the options at the end of this file and run the script.
 import glob
 import json
 import os
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from gzip import GzipFile
 
 import numpy as np
@@ -657,15 +658,30 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         print('Saving coefficients')
 
 
-# %%
+def parse_args():
+    """Parse commandline arguments"""
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument("-p",
+                        "--plots",
+                        action="store_true",
+                        help="Generate diagnostic plots.")
+    parser.add_argument("-n",
+                        "--dry-run",
+                        action="store_true",
+                        help="Don't store coefficients.")
 
+    return parser.parse_args()
+
+
+# %%
 if __name__ == '__main__':
+    args = parse_args()
 
     # show plots?
-    plotting = True
+    plotting = args.plots
 
     # store coefficients?
-    store_coeffs = True
+    store_coeffs = not args.dry_run
 
     script_path = os.path.dirname(os.path.realpath(__file__))
 
