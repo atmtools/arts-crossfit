@@ -5,7 +5,7 @@ ARTS HITRAN crosssection absorption model
 
 1. Download the precalculated coefficients files from the `arts-xml-data` package and put them in the `coefficients/` directory.
 
-   To generate the coefficients yourself, see section ["Generate fit coefficients"](#generate-fit-coefficients) below.
+   To generate the coefficients yourself, see section ["Generate model coefficients"](#generate-model-coefficients) below.
 
 2. Run the example script.
    ```
