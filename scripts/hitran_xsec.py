@@ -155,10 +155,9 @@ class XsecFileIndex:
         self.ignored_files = []
         self.failed_files = []
         if directory is not None and species is not None:
-            if "altname" in XSEC_SPECIES_INFO[species]:
-                speciesname = XSEC_SPECIES_INFO[species]["altname"]
-            else:
-                speciesname = species
+            speciesname = XSEC_SPECIES_INFO[species]["ordinary_formula"]
+            if not speciesname:
+                raise RuntimeError(f"Unknown ordaniry formula for {species}")
 
             for f in glob(os.path.join(directory, "*.xsc")):
                 try:

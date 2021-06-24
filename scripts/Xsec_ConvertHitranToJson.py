@@ -10,7 +10,7 @@ from hitran_xsec import (
     set_default_logging_format,
 )
 
-from xsec_species_info import SPECIES_GROUPS
+from xsec_species_info import SPECIES_GROUPS, XSEC_SPECIES_INFO
 
 set_default_logging_format(level=logging.INFO,
                            include_timestamp=True,
@@ -57,6 +57,17 @@ def xsc_to_json(species):
 
 for s in species_list:
     xsc_to_json(s)
+
+print()
+print("Unavailable RFMIP species:")
+for rfmip_species in SPECIES_GROUPS["rfmip-names"]:
+    found = False
+    for v in XSEC_SPECIES_INFO.values():
+        if v["rfmip"] == rfmip_species:
+            found = True
+            break
+    if not found:
+        print(rfmip_species)
 
 # Example for reading the data
 # import json
