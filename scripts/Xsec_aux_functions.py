@@ -165,6 +165,9 @@ def fit_poly1(xdata, zdata):
     return poly, res, rnk, s
 
 
+
+
+
 def calc_Rsquare(y, yfit, Ncoeffs):
     '''
     calculates the adjusted R-square statistic
@@ -219,7 +222,7 @@ def calculate_xsec(T, P, coeffs):
 
     z=sqrt(Xsec)
     x=T
-    y=log10(P) or y=log10(P/T)
+    y=sqrt(P)
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
@@ -229,15 +232,15 @@ def calculate_xsec(T, P, coeffs):
     coeffs[5,:]           p02
     '''
 
-    logP = np.log10(P)
+    FofP = np.sqrt(P)
 
     poly = np.zeros(6)
     poly[0] = 1
     poly[1] = T
-    poly[2] = logP
+    poly[2] = FofP
     poly[3] = T ** 2
-    poly[4] = T * logP
-    poly[5] = logP ** 2
+    poly[4] = T * FofP
+    poly[5] = FofP ** 2
 
     # allocate
     sqrtXsec = np.zeros(np.shape(coeffs))
@@ -282,7 +285,7 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
 
     z=sqrt(Xsec)
     x=T
-    y=log10(P) or y=log10(P/T)
+    y=sqrt(P)
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
@@ -351,7 +354,7 @@ def xsec_derivative(T, P, coeffs):
 
     z=sqrt(Xsec)
     x=T
-    y=log10(P)
+    y=sqrt(P)
 
     '''
 
@@ -362,18 +365,16 @@ def xsec_derivative(T, P, coeffs):
     p11 = coeffs[4, :]
     p02 = coeffs[5, :]
 
-    log10 = np.log(10.)
-    logP = np.log(P) / log10
-    Plog = P * log10
+    FofP = np.sqrt(P)
 
     DxsecDT = (2.
-               * (p10 + 2. * p20 * T + p11 * logP)
-               * (p00 + p10 * T + p20 * T ** 2 + p01 * logP + p11 * T * logP + p02 * logP ** 2)
+               * (p10 + 2. * p20 * T + p11 * FofP)
+               * (p00 + p10 * T + p20 * T ** 2 + p01 * FofP + p11 * T * FofP + p02 * P)
                )
 
     DxsecDp = (2.
-               * (p01 / Plog + p11 * T / Plog + 2. * p02 * logP / Plog)
-               * (p00 + p10 * T + p20 * T ** 2 + p01 * logP + p11 * T * logP + p02 * logP ** 2)
+               * (p01 / (2*FofP) + p11 * T / (2*FofP) + p02)
+               * (p00 + p10 * T + p20 * T ** 2 + p01 * FofP + p11 * T * FofP + p02 * P)
                )
 
     return DxsecDT, DxsecDp
@@ -405,7 +406,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
 
     z=sqrt(Xsec)
     x=T
-    y=log10(P) or y=log10(P/T)
+    y=sqrt(P)
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
@@ -415,20 +416,20 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
     coeffs[5,:]           p02
     '''
 
-    logP = np.log10(P)
+    FofP = np.sqrt(P)
 
     sqrtXsec = np.sqrt(Xsec)
 
     # check for bad values
-    logic_inf = np.isinf(T) | np.isinf(logP) | np.isinf(sqrtXsec)
-    logic_nan = np.isnan(T) | np.isnan(logP) | np.isnan(sqrtXsec)
+    logic_inf = np.isinf(T) | np.isinf(FofP) | np.isinf(sqrtXsec)
+    logic_nan = np.isnan(T) | np.isnan(FofP) | np.isnan(sqrtXsec)
     logic_bad = logic_inf | logic_nan
 
     if np.sum(logic_bad) < len(T):
 
         # remove bad values
         xData = T[~logic_bad]
-        yData = logP[~logic_bad]
+        yData = FofP[~logic_bad]
         zData = sqrtXsec[~logic_bad]
 
         # get some information about the data distribution
@@ -500,8 +501,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
             rnk = np.nan
             s = np.nan
 
-        MinP = min(10. ** yData)
-        MaxP = max(10. ** yData)
+        MinP = min(yData**2)
+        MaxP = max(yData**2)
 
         MinT = min(xData)
         MaxT = max(xData)
@@ -878,7 +879,7 @@ def scatter_plot(T, P, data, fig, ax, clim=None, xlabel='Temperature [K]',
 
     MarkerSize = 50
     sca = ax.scatter(T, P / 100, MarkerSize, data, cmap=cmap, vmin=clim[0], vmax=clim[1])
-    ax.set_yscale('log')
+    # ax.set_yscale('log')
 
     cbar = fig.colorbar(sca, ax=ax, shrink=1)
     cbar.set_label(cbar_label, fontproperties=font)
