@@ -27,7 +27,6 @@ c0 = 299792458.0  # [m/s]
 
 # %% fit related functions
 
-
 def fit_poly22(xdata, ydata, zdata):
     '''
     2d quadratic fit:
@@ -64,6 +63,78 @@ def fit_poly22(xdata, ydata, zdata):
 
     return poly, res, rnk, s
 
+def fit_poly21(xdata, ydata, zdata):
+    '''
+    2d semi quadratic fit:
+    z = p00 + p10*x + p01*y + p20*x**2 + p11*x*y
+
+    Args:
+        xdata:  vector
+                independent data.
+        ydata:  vector
+                independent data.
+        zdata:  vector
+                data, which depends on xdata and ydata.
+
+    Returns:
+        poly:   vector
+                coefficients of fit, see above for the order.
+        res:    float
+                summed residuums.
+        rnk:    int
+                Effective rank of design matrix M.
+        s:      ndarray or None
+                Singular values of M.
+
+    '''
+
+    M = np.ones((len(xdata), 5))
+    M[:, 1] = xdata  # p01
+    M[:, 2] = ydata  # p10
+    M[:, 3] = xdata ** 2  # p20
+    M[:, 4] = xdata * ydata  # p11
+
+
+    poly, res, rnk, s = lstsq(M, zdata)
+
+    return poly, res, rnk, s
+
+def fit_poly12(xdata, ydata, zdata):
+    '''
+    2d semi quadratic fit:
+    z = p00 + p10*x + p01*y + p11*x*y + p02*y**2
+
+    Args:
+        xdata:  vector
+                independent data.
+        ydata:  vector
+                independent data.
+        zdata:  vector
+                data, which depends on xdata and ydata.
+
+    Returns:
+        poly:   vector
+                coefficients of fit, see above for the order.
+        res:    float
+                summed residuums.
+        rnk:    int
+                Effective rank of design matrix M.
+        s:      ndarray or None
+                Singular values of M.
+
+    '''
+
+    M = np.ones((len(xdata), 5))
+    M[:, 1] = xdata  # p01
+    M[:, 2] = ydata  # p10
+    M[:, 3] = xdata * ydata  # p11
+    M[:, 4] = ydata**2  # p02
+
+
+    poly, res, rnk, s = lstsq(M, zdata)
+
+    return poly, res, rnk, s
+
 
 def fit_poly11(xdata, ydata, zdata):
     '''
@@ -90,8 +161,8 @@ def fit_poly11(xdata, ydata, zdata):
 
     '''
 
-    M = np.ones((len(xdata), 6))
-    M[:, 1] = xdata  # p01
+    M = np.ones((len(xdata), 3))
+    M[:, 1] = xdata  # p10
     M[:, 2] = ydata  # p01
 
     poly, res, rnk, s = lstsq(M, zdata)
@@ -380,7 +451,7 @@ def xsec_derivative(T, P, coeffs):
     return DxsecDT, DxsecDp
 
 
-def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
+def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
     '''
     FUnction to calculate the fit of the xsec at an arbitrary frequency
 
@@ -391,8 +462,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
             pressures same lenghth as `T`.
         Xsec: vector
             cross section same length as `T`.
-        min_deltaLogP: float, optional
-            minimum variability of log10(`P`) for fit. Defaults to 0.2.
+        min_deltaSqrtP: float, optional
+            minimum variability of sqrt(`P`) for fit. Defaults to 100
         min_deltaT: float, optional
             minimum variability of `T` for fit. Defaults to 20.
 
@@ -432,20 +503,53 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
         yData = FofP[~logic_bad]
         zData = sqrtXsec[~logic_bad]
 
+        # get number of unique temperatures and pressures
+        N_Tunique = np.size(np.unique(xData))
+        N_Punique = np.size(np.unique(yData))
+
         # get some information about the data distribution
         Ndata = np.sum(~logic_bad)
-        Delta_logP = max(yData) - min(yData)
+        Delta_SqrtP = max(yData) - min(yData)
         Delta_T = max(xData) - min(xData)
 
         # quadratic fit in temperature and pressure
-        if Delta_logP >= min_deltaLogP and Delta_T > min_deltaT and Ndata > 5:
+        if (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 5
+            and N_Tunique>2 and N_Punique>2):
 
             p, res, rnk, s = fit_poly22(xData, yData, zData)
 
             coeffs = p
 
+        # quadratic fit in temperature and linear in pressure
+        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
+              and N_Tunique>2 and N_Punique>1):
+
+            p, res, rnk, s = fit_poly21(xData, yData, zData)
+
+            coeffs = np.zeros(6)
+            coeffs[0] = p[0]
+            coeffs[1] = p[1]
+            coeffs[2] = p[2]
+            coeffs[3] = p[3]
+            coeffs[4] = p[4]
+
+        # linear fit in temperature and quadratic in pressure
+        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
+              and N_Tunique>1 and N_Punique>2):
+
+            p, res, rnk, s = fit_poly12(xData, yData, zData)
+
+            coeffs = np.zeros(6)
+            coeffs[0] = p[0]
+            coeffs[1] = p[1]
+            coeffs[2] = p[2]
+            coeffs[4] = p[3]
+            coeffs[5] = p[4]
+
+
         # linear fit in temperature and pressure
-        elif Delta_logP >= min_deltaLogP and Delta_T > min_deltaT and Ndata > 2:
+        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 2
+              and N_Tunique>1 and N_Punique>1):
 
             p, res, rnk, s = fit_poly11(xData, yData, zData)
 
@@ -455,7 +559,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
             coeffs[2] = p[2]
 
         # quadratic fit in temperature
-        elif Delta_logP < min_deltaLogP and Delta_T > min_deltaT and Ndata > 2:
+        elif Delta_T > min_deltaT and N_Tunique > 2 and N_Punique==1:
 
             p, res, rnk, s = fit_poly2(xData, zData)
 
@@ -465,7 +569,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
             coeffs[3] = p[2]
 
         # linear fit in temperature
-        elif Delta_logP < min_deltaLogP and Delta_T > min_deltaT and Ndata > 1:
+        elif Delta_T > min_deltaT and N_Tunique > 1 and N_Punique == 1:
 
             p, res, rnk, s = fit_poly1(xData, zData)
 
@@ -474,7 +578,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
             coeffs[1] = p[1]
 
         # quadratic fit in pressure
-        elif Delta_logP > min_deltaLogP and Delta_T < min_deltaT and Ndata > 2:
+        elif Delta_SqrtP > min_deltaSqrtP and N_Tunique == 1 and N_Punique > 2:
 
             p, res, rnk, s = fit_poly2(yData, zData)
 
@@ -484,7 +588,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaLogP=0.2, min_deltaT=20.):
             coeffs[5] = p[2]
 
         # linear fit in pressure
-        elif Delta_logP > min_deltaLogP and Delta_T < min_deltaT and Ndata > 1:
+        elif Delta_SqrtP > min_deltaSqrtP and N_Tunique == 1 and N_Punique > 1:
 
             p, res, rnk, s = fit_poly1(yData, zData)
 
@@ -946,7 +1050,7 @@ def pcolor_plot(x, y, Z, fig, ax, minZ, maxZ, font_name=None, xlabel=None, ylabe
     pcm = ax.pcolormesh(x, y, Z, shading='nearest', cmap=cmap, vmin=minZ, vmax=maxZ)
     pcm.set_rasterized(True)
     cbar = fig.colorbar(pcm, ax=ax, shrink=1)
-    ax.set_yscale('log')
+    # ax.set_yscale('log')
 
     # set the Make-Up and writings
     ax.set_title(title, fontproperties=font)
@@ -958,7 +1062,8 @@ def pcolor_plot(x, y, Z, fig, ax, minZ, maxZ, font_name=None, xlabel=None, ylabe
     return fig, ax, pcm, cbar
 
 
-def make_band_patches(ax, bandwidths, verticalwidth, edgecolor='None', alpha=0.25):
+def make_band_patches(ax, bandwidths, verticalwidth, cmap=None, edgecolor='None',
+                      alpha=0.25, zorder=-1):
     '''
     function to plot patches in plot to mark the band ranges
     Args:
@@ -969,10 +1074,14 @@ def make_band_patches(ax, bandwidths, verticalwidth, edgecolor='None', alpha=0.2
 
         verticalwidth: vector
             upper and lower vertical border for plotting
+        cmap: Colormap
+            Colormap(default: none)
         edgecolor: colormarker
             colormarker for the edges of the patches
         alpha: float
             alpha blending value, between 0 (transparent) and 1 (opaque).
+        zorder: float
+            Set the zorder for the artist. Artists with lower zorder values are drawn first.
 
 
     Returns:
@@ -981,7 +1090,8 @@ def make_band_patches(ax, bandwidths, verticalwidth, edgecolor='None', alpha=0.2
 
     '''
 
-    cmap = cmap_matlab_lines()
+    if cmap is None:
+        cmap = cmap_matlab_lines()
 
     for x, i in zip(bandwidths, range(len(bandwidths))):
         idx = i % np.size(cmap, axis=0)
@@ -990,7 +1100,7 @@ def make_band_patches(ax, bandwidths, verticalwidth, edgecolor='None', alpha=0.2
 
         patch = ptch.Rectangle((x[0], verticalwidth[0]), x[1] - x[0],
                                verticalwidth[1] - verticalwidth[0], facecolor=color,
-                               alpha=alpha, edgecolor=edgecolor)
+                               alpha=alpha, edgecolor=edgecolor, zorder=zorder)
 
         ax.add_patch(patch)
 
@@ -1030,10 +1140,17 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
 
         ax1[j], font = default_plot_format(ax1[j], font_name)
 
+        dw=[]
+        N_wvn=[]
         for k in range(len(xsec_data[j])):
 
             wvn = np.linspace(xsec_data[j][k]['wmin'], xsec_data[j][k]['wmax'],
                               len(xsec_data[j][k]['xsec']))
+
+            N_wvn.append(len(wvn))
+
+            dw_k = (xsec_data[j][k]['wmax'] - xsec_data[j][k]['wmin']) / len(xsec_data[j][k]['xsec'])
+            dw.append(dw_k)
 
             XSECS = xsec_data[j][k]['xsec']
 
@@ -1045,12 +1162,17 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
             else:
                 ax1[j].plot(wvn, XSECS, linewidth=0.1)
 
+        #Get highest resolution and number of samples
+        dw = np.min(dw)
+        N_wvn = np.max(N_wvn)
+
         ax1[j].set_yscale('log')
         ax1[j].set_ylim(1e-24, 1e-15)
         ax1[j].grid(which='both', linestyle=':', linewidth=0.25)
         ax1[j].set_ylabel('$a_{xsec} $[cm$^2$]')
         ax1[j].set_title(species + ': set ' + str(j) + '; $N_{obs}=$' + str(len(xsec_data[j])) +
-                         ' $; N_{sample}$=' + str(len(wvn)))
+                         '; $N_{sample,max}=$' + f'{N_wvn}' + '; $dwvn_{min}=$' + rf'{dw:.3f}' + 'cm$^{-1}$' )
+        ax1[j].title.set_fontsize(8)
 
         if j == number_of_sets:
             ax1[j].set_xlabel('wavenumber [cm$^{-1}$]')
