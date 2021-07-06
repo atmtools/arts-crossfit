@@ -417,7 +417,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             print('Plotting fig4.1')
 
             T_i = [np.min(MinT), np.max(MaxT)]
-            P_i = [ np.max([1., np.min(MinP)]), np.max([np.max(MaxP),101325.])]
+            P_i = [np.max([1., np.min(MinP)]), np.max([np.max(MaxP), 101325.])]
 
             fig41, axs41 = xaf.default_figure(len(T_i) * len(P_i), 1, width_in_cm=20.9,
                                               height_in_cm=29.7, sharey=False)
@@ -458,7 +458,6 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
             print('Plotting fig4.2')
 
-
             fig42, axs42 = xaf.default_figure(len(T_i) * len(P_i), 1, width_in_cm=20.9,
                                               height_in_cm=29.7, sharey=False)
             fig42.subplots_adjust(hspace=0.5)
@@ -470,7 +469,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
                     p = P_i[j]
                     t = T_i[i]
-                    deltaP = p*1e-5
+                    deltaP = p * 1e-5
 
                     # P derivative of fitted spectrum
                     _, DxsecDP = xaf.xsec_derivative(t, p, fit_coeffs)
@@ -509,30 +508,26 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                     # Integral over frequency of fitted spectrum
                     Xmean[i, j] = np.trapz(xsec_fit, wvn) * 1e4
 
-
             fig5, axs5 = xaf.default_figure(1, 1)
 
             xlabel = 'Temperature [K]'
             ylabel = 'Pressure [hPa]'
             # cbar_label = '[m$^2$]'
-            cbar_label='[cm$^2$ cm$^{-1}$]'
+            cbar_label = '[cm$^2$ cm$^{-1}$]'
             title = '$\\overline{a_{xsec,f}}$ (fit)'
 
             fig5, axs5, pcm, cbar = xaf.pcolor_plot(Ttest, Ptest / 100, Xmean, fig5, axs5,
-                                                       np.percentile(Xmean,1), np.percentile(Xmean,99),
-                                                       xlabel=xlabel, ylabel=ylabel,
-                                                       cmap='temperature', title=title,
-                                                       cbar_label=cbar_label)
+                                                    np.percentile(Xmean, 1), np.percentile(Xmean, 99),
+                                                    xlabel=xlabel, ylabel=ylabel,
+                                                    cmap='temperature', title=title,
+                                                    cbar_label=cbar_label)
 
             axs5.scatter(T, P / 100, 50, XsecInt, cmap='temperature', edgecolors='w',
                          vmin=cbar.vmin, vmax=cbar.vmax, zorder=1e11)
 
-
             # axs5 = xaf.make_band_patches(axs5, [[np.min(MinT),np.max(MaxT)]], [np.min(MinP)/100,np.max(MaxP)/100],
             #                       cmap=np.array([[0.8, 0.8, 0.8, 1]]),
             #                       edgecolor='None', alpha=0.4, zorder=1e9)
-
-
 
             axs5.invert_yaxis()
 
@@ -627,13 +622,13 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
     if store_coeffs == True:
         xsec_record = pyarts.classes.XsecRecord()
-        xsec_record.spec=species_arts
-        xsec_record.fitminpressures=min_pressures
-        xsec_record.fitmaxpressures=max_pressures
-        xsec_record.fitmintemperatures=min_temperatures
-        xsec_record.fitmaxtemperatures=max_temperatures
-        xsec_record.fitcoeffs=Xsec_processed_data_array
-        xsec_record.version=2
+        xsec_record.spec = species_arts
+        xsec_record.fitminpressures = min_pressures
+        xsec_record.fitmaxpressures = max_pressures
+        xsec_record.fitmintemperatures = min_temperatures
+        xsec_record.fitmaxtemperatures = max_temperatures
+        xsec_record.fitcoeffs = Xsec_processed_data_array
+        xsec_record.version = 2
 
         fid = '.xml'
 
@@ -695,7 +690,6 @@ if __name__ == '__main__':
 
         if species not in all_species:
             all_species.append(species)
-
 
     for species in all_species:
         process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=store_coeffs,

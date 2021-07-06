@@ -157,7 +157,7 @@ if new_config_flag == 1:
 
                 print('Existing band definition')
                 for band_idx in range(1, len(config_list_old[cnt])):
-                    print(f"band: {band_idx-1:.0f}")
+                    print(f"band: {band_idx - 1:.0f}")
                     print(config_list_old[cnt][band_idx])
 
                 if overview_flag == True:

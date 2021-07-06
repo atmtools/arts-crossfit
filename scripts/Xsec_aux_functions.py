@@ -63,6 +63,7 @@ def fit_poly22(xdata, ydata, zdata):
 
     return poly, res, rnk, s
 
+
 def fit_poly21(xdata, ydata, zdata):
     '''
     2d semi quadratic fit:
@@ -94,10 +95,10 @@ def fit_poly21(xdata, ydata, zdata):
     M[:, 3] = xdata ** 2  # p20
     M[:, 4] = xdata * ydata  # p11
 
-
     poly, res, rnk, s = lstsq(M, zdata)
 
     return poly, res, rnk, s
+
 
 def fit_poly12(xdata, ydata, zdata):
     '''
@@ -128,8 +129,7 @@ def fit_poly12(xdata, ydata, zdata):
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p10
     M[:, 3] = xdata * ydata  # p11
-    M[:, 4] = ydata**2  # p02
-
+    M[:, 4] = ydata ** 2  # p02
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -234,9 +234,6 @@ def fit_poly1(xdata, zdata):
     poly, res, rnk, s = lstsq(M, zdata)
 
     return poly, res, rnk, s
-
-
-
 
 
 def calc_Rsquare(y, yfit, Ncoeffs):
@@ -444,7 +441,7 @@ def xsec_derivative(T, P, coeffs):
                )
 
     DxsecDp = (2.
-               * (p01 / (2*FofP) + p11 * T / (2*FofP) + p02)
+               * (p01 / (2 * FofP) + p11 * T / (2 * FofP) + p02)
                * (p00 + p10 * T + p20 * T ** 2 + p01 * FofP + p11 * T * FofP + p02 * P)
                )
 
@@ -514,7 +511,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
         # quadratic fit in temperature and pressure
         if (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 5
-            and N_Tunique>2 and N_Punique>2):
+                and N_Tunique > 2 and N_Punique > 2):
 
             p, res, rnk, s = fit_poly22(xData, yData, zData)
 
@@ -522,7 +519,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
         # quadratic fit in temperature and linear in pressure
         elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
-              and N_Tunique>2 and N_Punique>1):
+              and N_Tunique > 2 and N_Punique > 1):
 
             p, res, rnk, s = fit_poly21(xData, yData, zData)
 
@@ -535,7 +532,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
         # linear fit in temperature and quadratic in pressure
         elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
-              and N_Tunique>1 and N_Punique>2):
+              and N_Tunique > 1 and N_Punique > 2):
 
             p, res, rnk, s = fit_poly12(xData, yData, zData)
 
@@ -549,7 +546,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
         # linear fit in temperature and pressure
         elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 2
-              and N_Tunique>1 and N_Punique>1):
+              and N_Tunique > 1 and N_Punique > 1):
 
             p, res, rnk, s = fit_poly11(xData, yData, zData)
 
@@ -559,7 +556,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             coeffs[2] = p[2]
 
         # quadratic fit in temperature
-        elif Delta_T > min_deltaT and N_Tunique > 2 and N_Punique==1:
+        elif Delta_T > min_deltaT and N_Tunique > 2 and N_Punique == 1:
 
             p, res, rnk, s = fit_poly2(xData, zData)
 
@@ -605,8 +602,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             rnk = np.nan
             s = np.nan
 
-        MinP = min(yData**2)
-        MaxP = max(yData**2)
+        MinP = min(yData ** 2)
+        MaxP = max(yData ** 2)
 
         MinT = min(xData)
         MaxT = max(xData)
@@ -1140,8 +1137,8 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
 
         ax1[j], font = default_plot_format(ax1[j], font_name)
 
-        dw=[]
-        N_wvn=[]
+        dw = []
+        N_wvn = []
         for k in range(len(xsec_data[j])):
 
             wvn = np.linspace(xsec_data[j][k]['wmin'], xsec_data[j][k]['wmax'],
@@ -1162,7 +1159,7 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
             else:
                 ax1[j].plot(wvn, XSECS, linewidth=0.1)
 
-        #Get highest resolution and number of samples
+        # Get highest resolution and number of samples
         dw = np.min(dw)
         N_wvn = np.max(N_wvn)
 
@@ -1171,7 +1168,7 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
         ax1[j].grid(which='both', linestyle=':', linewidth=0.25)
         ax1[j].set_ylabel('$a_{xsec} $[cm$^2$]')
         ax1[j].set_title(species + ': set ' + str(j) + '; $N_{obs}=$' + str(len(xsec_data[j])) +
-                         '; $N_{sample,max}=$' + f'{N_wvn}' + '; $dwvn_{min}=$' + rf'{dw:.3f}' + 'cm$^{-1}$' )
+                         '; $N_{sample,max}=$' + f'{N_wvn}' + '; $dwvn_{min}=$' + rf'{dw:.3f}' + 'cm$^{-1}$')
         ax1[j].title.set_fontsize(8)
 
         if j == number_of_sets:
