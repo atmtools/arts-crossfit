@@ -593,10 +593,10 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             coeffs[0] = p[0]
             coeffs[2] = p[1]
 
-        # no fit, just mean value
+        # no fit, just median value
         else:
             coeffs = np.zeros(6)
-            coeffs[0] = np.mean(zData)
+            coeffs[0] = np.median(zData)
 
             res = np.sum((zData - coeffs[0]) ** 2)
             rnk = np.nan
