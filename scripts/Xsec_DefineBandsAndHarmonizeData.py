@@ -101,10 +101,10 @@ if new_config_flag == 1:
         # get spectral information of data
         wvn_intervalls = np.zeros((number_of_sets, 2))
         for j in range(number_of_sets):
-            number_of_freqs = len(xsec_data[j][0]['xsec'])
             number_of_obs = len(xsec_data[j])
-            wvn_min = xsec_data[j][0]['wmin']
-            wvn_max = xsec_data[j][0]['wmax']
+            number_of_freqs = np.max([len(xsec_data[j][k]['xsec']) for k in range(len(xsec_data[j]))])
+            wvn_min = np.min([xsec_data[j][k]['wmin'] for k in range(len(xsec_data[j]))])
+            wvn_max = np.max([xsec_data[j][k]['wmax'] for k in range(len(xsec_data[j]))])
             dw = (wvn_max - wvn_min) / number_of_freqs
 
             wvn_intervalls[j, 0] = wvn_min
@@ -113,8 +113,8 @@ if new_config_flag == 1:
             print(f"set: {j:.0f}")
             print(f"Ns = {number_of_obs:.0f}")
             print(f"Nf = {number_of_freqs:.0f}")
-            print(f"wvn_min = {wvn_min:.2f}")
-            print(f"wvn_max = {wvn_max:.2f}")
+            print(f"wvn_min = {wvn_min:.3f}")
+            print(f"wvn_max = {wvn_max:.3f}")
             print(f"dw      = {dw:.7f}")
             print('')
 
@@ -157,7 +157,7 @@ if new_config_flag == 1:
 
                 print('Existing band definition')
                 for band_idx in range(1, len(config_list_old[cnt])):
-                    print(f"band: {band_idx:.0f}")
+                    print(f"band: {band_idx - 1:.0f}")
                     print(config_list_old[cnt][band_idx])
 
                 if overview_flag == True:
@@ -287,11 +287,11 @@ for f_i in range(len(filelist)):
         print('Defined band #' + str(i))
         print('wvn min = ' + str(wvn_min))
         print('wvn max = ' + str(wvn_max))
-        print('  ')
 
         # get the highest spectral resolution of the data for the defined band
         dw = []
         Nfs = []
+        ols = []
         # loop over bands (data)
         for j in range(len(xsec_data)):
 
@@ -307,13 +307,14 @@ for f_i in range(len(filelist)):
 
                 ol = xaf.getOverlap(wvn_int_def, wvn_int_data)
 
-                if ol == 0:
+                if ol <= 1:
                     continue
                 else:
                     dwtemp = (wmax_data - wmin_data) / Nf
 
                     dw.append(dwtemp)
                     Nfs.append(Nf)
+                    ols.append(ol)
 
         dw = np.array(dw)
         Nfs = np.array(Nfs)
@@ -322,6 +323,9 @@ for f_i in range(len(filelist)):
         delta_w = np.min(dw)
 
         wvn = np.linspace(wvn_min, wvn_max, round((wvn_max - wvn_min) / delta_w))
+
+        print(f'dw = {delta_w:.5f} cm⁻¹')
+        print(f'N_wvn = {len(wvn)}\n')
 
         # check that the edges are not double
         if wvn_min == wvn_max_previous:
@@ -352,13 +356,12 @@ for f_i in range(len(filelist)):
 
                 ol = xaf.getOverlap(wvn_int_def, wvn_int_data)
 
-                if ol == 0:
+                if ol <= 1:
                     continue
                 else:
                     cnt_data = cnt_data + 1
 
                     if cnt_data + 1 > len(dw):
-                        print('verdammt')
                         raise (' damn it!')
 
                     # wavenumber of data
@@ -407,11 +410,7 @@ for f_i in range(len(filelist)):
                     temp['species'] = xsec_data[j][k]['species']
                     temp['IntXsec_cm2_per_cm'] = xsec_int_temp
                     temp['DeltaIntXsec_relative'] = dxsec_int_temp
-
-                    if xsec_data[j][k]['pressure'] == 0.0:
-                        temp['pressure'] = np.float64(101325.)
-                    else:
-                        temp['pressure'] = np.float64(xsec_data[j][k]['pressure'])
+                    temp['pressure'] = np.float64(xsec_data[j][k]['pressure'])
 
                     data_band_i.append(temp)
 
