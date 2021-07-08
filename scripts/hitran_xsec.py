@@ -65,7 +65,7 @@ class XsecFile:
         rnum = r"[0-9]+\.?[0-9]*"
         m = re.search(
             f"(?P<species>[^_]*)_(?P<T>{rnum})K?[-_](?P<P>{rnum})(Torr|K)?[-_]"
-            f"(?P<wmin>{rnum})[-_](?P<wmax>{rnum})(?P<extra>_.*)?\.xsc",
+            f"(?P<wmin>{rnum})[-_](?P<wmax>{rnum})(?P<extra>_.*)?\\.xsc",
             os.path.basename(self.filename),
         )
         try:
