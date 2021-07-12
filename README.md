@@ -16,7 +16,7 @@ ARTS HITRAN cross section absorption model
 
 ## Generate model coefficients
 
-1. Download Hitran cross section data and molecule headers and unpack in `data/HitranXsec/`
+1. Download Hitran cross section data and molecule headers into designated folders
    ```
    cd data/HitranXsec/
    curl -O https://hitran.org/data/xsec/xss.tar.gz
