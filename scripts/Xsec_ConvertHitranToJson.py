@@ -9,7 +9,7 @@ from hitran_xsec import (
     XsecFile,
     set_default_logging_format,
 )
-
+from hitran_molecule_headers import HitranMoleculeHeaders
 from xsec_species_info import SPECIES_GROUPS, XSEC_SPECIES_INFO
 
 set_default_logging_format(level=logging.INFO,
@@ -25,8 +25,11 @@ species_list = SPECIES_GROUPS["rfmip"]
 
 
 def xsc_to_json(species):
+    MOLECULEDIR = os.path.join(script_path, "../data/HitranMoleculeHeaders")
+    hmh = HitranMoleculeHeaders(MOLECULEDIR)
+
     outfile = os.path.join(OUTPUTDIR, f"{species}.xsc.json.gz")
-    xfi = XsecFileIndex(INPUTDIR, species)
+    xfi = XsecFileIndex(INPUTDIR, species, molecule_headers=hmh)
     bands = xfi.cluster_by_band()
 
     bands2 = []
