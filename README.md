@@ -16,11 +16,13 @@ ARTS HITRAN crosssection absorption model
 
 ## Generate model coefficients
 
-1. Download Hitran Crosssection data and unpack in `data/HitranXsec/`
+1. Download Hitran cross-section data and molecule headers and unpack in `data/HitranXsec/`
    ```
    cd data/HitranXsec/
    curl -O https://hitran.org/data/xsec/xss.tar.gz
    tar -zxf xss.tar.gz
+   cd ../HitranMoleculeHeaders/
+   wget --no-parent -nd -r -A '*.json' https://hitran.org/suppl/xsec/molecule_headers/
    cd -
    ```
 
