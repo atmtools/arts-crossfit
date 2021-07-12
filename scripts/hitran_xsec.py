@@ -93,9 +93,10 @@ class XsecFile:
                     f"{self.wmin}{self.wmax}")
 
     def __eq__(self, x):
-        return (self.species == x.species and self.pressure == x.pressure
-                and self.temperature == x.temperature and self.wmin == x.wmin
-                and self.wmax == x.wmax)
+        return (self.nfreq == x.nfreq and self.species == x.species
+                and self.pressure == x.pressure and self.temperature == x.temperature
+                and self.wmin == x.wmin and self.wmax == x.wmax
+                and np.allclose(self.data, x.data, atol=1e-24))
 
     def to_dict(self):
         return {
