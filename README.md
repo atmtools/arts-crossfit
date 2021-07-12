@@ -1,7 +1,7 @@
 # arts-crossfit
-ARTS HITRAN crosssection absorption model
+ARTS HITRAN cross section absorption model
 
-## Calculate crosssections with the model
+## Calculate cross sections with the model
 
 1. Download the precalculated coefficients files from the `arts-xml-data` package and put them in the `coefficients/` directory.
 
@@ -16,7 +16,7 @@ ARTS HITRAN crosssection absorption model
 
 ## Generate model coefficients
 
-1. Download Hitran cross-section data and molecule headers and unpack in `data/HitranXsec/`
+1. Download Hitran cross section data and molecule headers and unpack in `data/HitranXsec/`
    ```
    cd data/HitranXsec/
    curl -O https://hitran.org/data/xsec/xss.tar.gz
@@ -26,7 +26,7 @@ ARTS HITRAN crosssection absorption model
    cd -
    ```
 
-2. Convert crosssection data to json format
+2. Convert cross section data to json format
    ```
    scripts/Xsec_ConvertHitranToJson.py
    ```
