@@ -119,8 +119,7 @@ class XsecFile:
         with open(self.filename) as f:
             header = f.readline()
             data = np.hstack(
-                list(map(lambda l: list(map(float, l.split())),
-                         f.readlines())))
+                list(map(lambda l: list(map(float, l.split())), f.readlines())))
 
         self._header = header.split()
         self._data = data
@@ -227,8 +226,7 @@ class XsecFileIndex:
                     xsec_file = XsecFile(f)
                     if xsec_file.species != speciesname:
                         pass
-                    elif ignore is not None and re.match(
-                            ignore, xsec_file.extra):
+                    elif ignore is not None and re.match(ignore, xsec_file.extra):
                         self.ignored_files.append(f)
                     else:
                         if species != speciesname:
@@ -238,9 +236,8 @@ class XsecFileIndex:
                                 molecule_headers):
                             self.files.append(xsec_file)
                         else:
-                            logger.warn(
-                                "Species alias mismatch, "
-                                f"ignoring {xsec_file.filename}")
+                            logger.warn("Species alias mismatch, "
+                                        f"ignoring {xsec_file.filename}")
                 except XsecError:
                     self.failed_files.append(f)
         self.uniquify()
@@ -278,17 +275,14 @@ class XsecFileIndex:
         """Find cross sections that match the criteria."""
         return [
             x for x in self.files
-            if (not wmin or x.wmin == wmin) and (not wmax or x.wmax == wmax)
-            and (not temperature or x.temperature == temperature) and (
-                not pressure or x.torr == pressure)
+            if (not wmin or x.wmin == wmin) and (not wmax or x.wmax == wmax) and (
+                not temperature or x.temperature == temperature) and (
+                    not pressure or x.torr == pressure)
         ]
 
     def cluster_by_band(self, wgap=1):
         """Combine files for each band in a list."""
-        return _cluster2(self.files,
-                         wgap,
-                         key=lambda x: x.wmin,
-                         key2=lambda x: x.wmax)
+        return _cluster2(self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax)
 
     def cluster_by_temperature(self, tgap=3):
         """Combine files for each temperature in a list."""
@@ -296,15 +290,13 @@ class XsecFileIndex:
 
     def cluster_by_band_and_pressure(self, wgap=1, pgap=100):
         """Combine files for each band and pressure in a nested list."""
-        return (_cluster2(
-            l, pgap, key=lambda x: x.pressure) for l in _cluster2(
-                self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
+        return (_cluster2(l, pgap, key=lambda x: x.pressure) for l in _cluster2(
+            self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
 
     def cluster_by_band_and_temperature(self, wgap=1, tgap=3):
         """Combine files for each band and temperature in a nested list."""
-        return (_cluster2(
-            l, tgap, key=lambda x: x.temperature) for l in _cluster2(
-                self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
+        return (_cluster2(l, tgap, key=lambda x: x.temperature) for l in _cluster2(
+            self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
 
 
 def torr_to_pascal(torr):
@@ -329,8 +321,7 @@ def _cluster2(iterable: Iterable, maxgap, key=lambda x: x, key2=None):
     prev = None
     group = []
     for item in sorted(iterable,
-                       key=lambda x: (key(x), key2(x))
-                       if key2 is not None else key(x)):
+                       key=lambda x: (key(x), key2(x)) if key2 is not None else key(x)):
         if not prev or (key(item) - key(prev) <= maxgap and
                         (not key2 or key2(item) - key2(prev) <= maxgap)):
             group.append(item)
