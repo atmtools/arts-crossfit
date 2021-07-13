@@ -109,7 +109,7 @@ XSEC_SPECIES_INFO = {
         "rfmip": "cf4_GM",
     },
     "NF3": {
-        "name": "Nitrogen trifluoride.json",
+        "name": "Nitrogen trifluoride",
         "ordinary_formula": "NF3",
         "rfmip": "nf3_GM",
     },

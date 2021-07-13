@@ -65,19 +65,20 @@ class XsecFile:
         rnum = r"[0-9]+\.?[0-9]*"
         m = re.search(
             f"(?P<species>[^_]*)_(?P<T>{rnum})K?[-_](?P<P>{rnum})(Torr|K)?[-_]"
-            f"(?P<wmin>{rnum})[-_](?P<wmax>{rnum})(?P<extra>_.*)?\.xsc",
+            f"(?P<wmin>{rnum})[-_](?P<wmax>{rnum})(?P<extra>_.*)?\\.xsc",
             os.path.basename(self.filename),
         )
         try:
             self.species = m.group("species")
-            self.temperature = float(m.group("T"))
-            self.torr = float(m.group("P"))
-            self.pressure = torr_to_pascal(self.torr)
-            self.wmin = float(m.group("wmin"))
-            self.wmax = float(m.group("wmax"))
-            self.fmin = wavenumber2frequency(self.wmin * 100)
-            self.fmax = wavenumber2frequency(self.wmax * 100)
+            self.ftemperature = float(m.group("T"))
+            self.ftorr = float(m.group("P"))
+            self.fwmin = float(m.group("wmin"))
+            self.fwmax = float(m.group("wmax"))
             self.extra = m.group("extra")
+            self._temperature = None
+            self._torr = None
+            self._wmin = None
+            self._wmax = None
             self._header = None
             self._data = None
             self._nfreq = None
@@ -92,9 +93,10 @@ class XsecFile:
                     f"{self.wmin}{self.wmax}")
 
     def __eq__(self, x):
-        return (self.species == x.species and self.pressure == x.pressure
-                and self.temperature == x.temperature and self.wmin == x.wmin
-                and self.wmax == x.wmax)
+        return (self.nfreq == x.nfreq and self.species == x.species
+                and self.pressure == x.pressure and self.temperature == x.temperature
+                and self.wmin == x.wmin and self.wmax == x.wmax
+                and np.allclose(self.data, x.data, atol=1e-24))
 
     def to_dict(self):
         return {
@@ -118,10 +120,9 @@ class XsecFile:
         with open(self.filename) as f:
             header = f.readline()
             data = np.hstack(
-                list(map(lambda l: list(map(float, l.split())),
-                         f.readlines())))
+                list(map(lambda l: list(map(float, l.split())), f.readlines())))
 
-        self._header = header
+        self._header = header.split()
         self._data = data
         self._nfreq = len(data)
 
@@ -130,6 +131,38 @@ class XsecFile:
         if self._nfreq is None:
             self.read_hitran_xsec()
         return self._nfreq
+
+    @property
+    def temperature(self):
+        self._temperature = float(self.header[4])
+        return self._temperature
+
+    @property
+    def torr(self):
+        self._torr = float(self.header[5])
+        return self._torr
+
+    @property
+    def pressure(self):
+        return torr_to_pascal(self.torr)
+
+    @property
+    def wmin(self):
+        self._wmin = float(self.header[1])
+        return self._wmin
+
+    @property
+    def wmax(self):
+        self._wmax = float(self.header[2])
+        return self._wmax
+
+    @property
+    def fmin(self):
+        return wavenumber2frequency(self.wmin * 100)
+
+    @property
+    def fmax(self):
+        return wavenumber2frequency(self.wmax * 100)
 
     @property
     def header(self):
@@ -147,30 +180,65 @@ class XsecFile:
     def data(self, val):
         self._data = val
 
+    def check_species(self, molecule_headers):
+        return (self.species in self.header[1:]
+                or (set(molecule_headers.find(self.species)[0]["all_names"])
+                    & set(self.header[1:])))
+
+    def check(self):
+        if not (-1 < self.temperature - self.ftemperature < 1):
+            logger.warn("Meta data mismatch in temperature "
+                        f"{self.temperature} {self.ftemperature} in {self.filename}")
+            raise XsecError()
+
+        if not (-5 < self.wmin - self.fwmin < 5):
+            logger.warn("Meta data mismatch in wmin "
+                        f"{self.wmin} {self.fwmin} in {self.filename}")
+            raise XsecError()
+
+        if not (-5 < self.wmax - self.fwmax < 5):
+            logger.warn("Meta data mismatch in wmax "
+                        f"{self.wmax} {self.fwmax} in {self.filename}")
+            raise XsecError()
+
+        if not (-1 < self.torr - self.ftorr < 1):
+            logger.warn("Meta data mismatch in pressure "
+                        f"{self.torr} {self.ftorr} in {self.filename}")
+            raise XsecError()
+
 
 class XsecFileIndex:
     """Database of HITRAN cross section files."""
-    def __init__(self, directory=None, species=None, ignore=None):
+    def __init__(self,
+                 directory=None,
+                 species=None,
+                 ignore=None,
+                 molecule_headers=None):
         self.files = []
         self.ignored_files = []
         self.failed_files = []
         if directory is not None and species is not None:
             speciesname = XSEC_SPECIES_INFO[species]["ordinary_formula"]
             if not speciesname:
-                raise RuntimeError(f"Unknown ordaniry formula for {species}")
+                raise RuntimeError(f"Unknown ordinary formula for {species}")
 
             for f in glob(os.path.join(directory, "*.xsc")):
                 try:
                     xsec_file = XsecFile(f)
                     if xsec_file.species != speciesname:
                         pass
-                    elif ignore is not None and re.match(
-                            ignore, xsec_file.extra):
+                    elif ignore is not None and re.match(ignore, xsec_file.extra):
                         self.ignored_files.append(f)
                     else:
-                        self.files.append(xsec_file)
                         if species != speciesname:
                             xsec_file.species = species
+                        xsec_file.check()
+                        if not molecule_headers or xsec_file.check_species(
+                                molecule_headers):
+                            self.files.append(xsec_file)
+                        else:
+                            logger.warn("Species alias mismatch, "
+                                        f"ignoring {xsec_file.filename}")
                 except XsecError:
                     self.failed_files.append(f)
         self.uniquify()
@@ -208,17 +276,14 @@ class XsecFileIndex:
         """Find cross sections that match the criteria."""
         return [
             x for x in self.files
-            if (not wmin or x.wmin == wmin) and (not wmax or x.wmax == wmax)
-            and (not temperature or x.temperature == temperature) and (
-                not pressure or x.torr == pressure)
+            if (not wmin or x.wmin == wmin) and (not wmax or x.wmax == wmax) and (
+                not temperature or x.temperature == temperature) and (
+                    not pressure or x.torr == pressure)
         ]
 
     def cluster_by_band(self, wgap=1):
         """Combine files for each band in a list."""
-        return _cluster2(self.files,
-                         wgap,
-                         key=lambda x: x.wmin,
-                         key2=lambda x: x.wmax)
+        return _cluster2(self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax)
 
     def cluster_by_temperature(self, tgap=3):
         """Combine files for each temperature in a list."""
@@ -226,15 +291,13 @@ class XsecFileIndex:
 
     def cluster_by_band_and_pressure(self, wgap=1, pgap=100):
         """Combine files for each band and pressure in a nested list."""
-        return (_cluster2(
-            l, pgap, key=lambda x: x.pressure) for l in _cluster2(
-                self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
+        return (_cluster2(l, pgap, key=lambda x: x.pressure) for l in _cluster2(
+            self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
 
     def cluster_by_band_and_temperature(self, wgap=1, tgap=3):
         """Combine files for each band and temperature in a nested list."""
-        return (_cluster2(
-            l, tgap, key=lambda x: x.temperature) for l in _cluster2(
-                self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
+        return (_cluster2(l, tgap, key=lambda x: x.temperature) for l in _cluster2(
+            self.files, wgap, key=lambda x: x.wmin, key2=lambda x: x.wmax))
 
 
 def torr_to_pascal(torr):
@@ -259,8 +322,7 @@ def _cluster2(iterable: Iterable, maxgap, key=lambda x: x, key2=None):
     prev = None
     group = []
     for item in sorted(iterable,
-                       key=lambda x: (key(x), key2(x))
-                       if key2 is not None else key(x)):
+                       key=lambda x: (key(x), key2(x)) if key2 is not None else key(x)):
         if not prev or (key(item) - key(prev) <= maxgap and
                         (not key2 or key2(item) - key2(prev) <= maxgap)):
             group.append(item)
