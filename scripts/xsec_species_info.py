@@ -128,12 +128,12 @@ XSEC_SPECIES_INFO = {
     # Hydrochlorofluorocarbons (HCFCs)
     "HCFC-141b": {
         "name": "HCFC-141b",
-        "ordinary_formula": "HCFC-141b",
+        "ordinary_formula": "CH3CCl2F",
         "rfmip": "hcfc141b_GM",
     },
     "HCFC-142b": {
         "name": "HCFC-142b",
-        "ordinary_formula": "HCFC-142b",
+        "ordinary_formula": "CH3CClF2",
         "rfmip": "hcfc142b_GM",
     },
     "HCFC-22": {
