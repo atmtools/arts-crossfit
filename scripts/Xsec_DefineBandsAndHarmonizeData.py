@@ -53,16 +53,16 @@ for files in filelist:
 
 print('')
 print('----------------------------------------------------------------------')
-print('now go through the data')
+print('Now go through the data')
 print('')
 # %% ask what do you want?
 
-print('read existing config(0) or make a new one(1)?')
+print('Read existing config(0) or make a new one(1)?')
 new_config_flag = input('==>>')
 new_config_flag = bool(int(new_config_flag))
 
 if new_config_flag == 1:
-    print('display raw data for band definition? yes(1) no(0) ')
+    print('Display raw data for band definition? yes(1) no(0) ')
     overview_flag = input('==>>')
     overview_flag = bool(int(overview_flag))
 
@@ -100,21 +100,24 @@ if new_config_flag == 1:
 
         # get spectral information of data
         wvn_intervalls = np.zeros((number_of_sets, 2))
+        dws = np.zeros(number_of_sets)
+
         for j in range(number_of_sets):
             number_of_obs = len(xsec_data[j])
             number_of_freqs = np.max([len(xsec_data[j][k]['xsec']) for k in range(len(xsec_data[j]))])
             wvn_min = np.min([xsec_data[j][k]['wmin'] for k in range(len(xsec_data[j]))])
             wvn_max = np.max([xsec_data[j][k]['wmax'] for k in range(len(xsec_data[j]))])
-            dw = (wvn_max - wvn_min) / number_of_freqs
+            dw = (wvn_max - wvn_min) / (number_of_freqs-1)
 
             wvn_intervalls[j, 0] = wvn_min
             wvn_intervalls[j, 1] = wvn_max
+            dws[j]=dw
 
             print(f"set: {j:.0f}")
             print(f"Ns = {number_of_obs:.0f}")
             print(f"Nf = {number_of_freqs:.0f}")
-            print(f"wvn_min = {wvn_min:.3f}")
-            print(f"wvn_max = {wvn_max:.3f}")
+            print(f"wvn_min = {wvn_min:.7f}")
+            print(f"wvn_max = {wvn_max:.7f}")
             print(f"dw      = {dw:.7f}")
             print('')
 
@@ -156,9 +159,9 @@ if new_config_flag == 1:
             if old_flag:
 
                 print('Existing band definition')
-                for band_idx in range(1, len(config_list_old[cnt])):
-                    print(f"band: {band_idx - 1:.0f}")
-                    print(config_list_old[cnt][band_idx])
+                for band_idx in range(len(config_list_old[cnt])-1):
+                    print(f"band: {band_idx:.0f}")
+                    print(config_list_old[cnt][band_idx+1])
 
                 if overview_flag == True:
                     for j in range(0, len(ax1)):
@@ -167,48 +170,69 @@ if new_config_flag == 1:
 
                     xaf.plt.show()
 
-                print('to use old values press enter or to define new ones type number of bands')
-                N_bands = input('==>>')
+                print('To use old values type "0" or to define new ones type "1"')
+                New_bands = int(input('==>>'))
 
-                if len(N_bands) == 0:
+                if New_bands == 0:
                     config_list[cnt] = config_list_old[cnt]
             else:
-                print('Number of bands, leave empty for skipping')
-                N_bands = input('==>>')
+                print('To define band limits type "1" or type "0" to skip')
+                New_bands = int(input('==>>'))
 
-            if len(N_bands) > 0:
+            if New_bands>0:
 
-                try:
-                    N_bands = int(N_bands)
+                #Make suggestion for bands
+                band_suggestion=xaf.suggest_banddefinition(wvn_intervalls, dws)
 
-                    if N_bands > number_of_sets:
-                        raise ('really so many bands??')
-                except:
-                    print('I think the number of bands was not correct!')
-                    print('Try again!')
+                print('\n')
+                print('Suggested bands')
+                for band_idx in range(len(band_suggestion)):
+                    print(f"band: {band_idx:.0f}")
+                    print(band_suggestion[band_idx])
+
+                print('\n')
+                print('Use suggested band limits? Yes(1) No(0)')
+                use_suggested_bands = bool(int(input('==>>')))
+
+                if use_suggested_bands:
+                    for band_idx in range(len(band_suggestion)):
+                        config_data.append(band_suggestion[band_idx])
+                else:
+
+                    # print('Number of bands')
                     N_bands = input('==>>')
-                    N_bands = int(N_bands)
-
-                for j in range(N_bands):
-
-                    print('')
-                    print('input the edges of band ' + str(j))
-                    print('wvn_min, wvn_max [cm^-1]')
-                    band_specs_in = input('==>>')
-                    band_specs_in = band_specs_in.split(',')
 
                     try:
-                        if len(band_specs_in) != 2:
-                            raise ('interval definition not correct')
+                        N_bands = int(N_bands)
 
+                        if N_bands > number_of_sets:
+                            raise ('Really so many bands??')
                     except:
-                        print('Interval definition not correct')
+                        print('I think the number of bands was not correct!')
                         print('Try again!')
+                        N_bands = input('==>>')
+                        N_bands = int(N_bands)
+
+                    for j in range(N_bands):
+
+                        print('')
+                        print('Input the edges of band ' + str(j))
+                        print('wvn_min, wvn_max [cm^-1]')
                         band_specs_in = input('==>>')
                         band_specs_in = band_specs_in.split(',')
 
-                    dump = [float(idx) for idx in band_specs_in]
-                    config_data.append(dump)
+                        try:
+                            if len(band_specs_in) != 2:
+                                raise ('Interval definition not correct')
+
+                        except:
+                            print('Interval definition not correct')
+                            print('Try again!')
+                            band_specs_in = input('==>>')
+                            band_specs_in = band_specs_in.split(',')
+
+                        dump = [float(idx) for idx in band_specs_in]
+                        config_data.append(dump)
 
                 config_list[cnt] = config_data
 
@@ -307,10 +331,10 @@ for f_i in range(len(filelist)):
 
                 ol = xaf.getOverlap(wvn_int_def, wvn_int_data)
 
-                if ol <= 1:
+                if ol == 0:
                     continue
                 else:
-                    dwtemp = (wmax_data - wmin_data) / Nf
+                    dwtemp = (wmax_data - wmin_data) / (Nf-1)
 
                     dw.append(dwtemp)
                     Nfs.append(Nf)
@@ -356,7 +380,7 @@ for f_i in range(len(filelist)):
 
                 ol = xaf.getOverlap(wvn_int_def, wvn_int_data)
 
-                if ol <= 1:
+                if ol == 0:
                     continue
                 else:
                     cnt_data = cnt_data + 1
@@ -366,6 +390,9 @@ for f_i in range(len(filelist)):
 
                     # wavenumber of data
                     wvn_data = np.linspace(wmin_data, wmax_data, Nf)
+
+                    # original wavenumber resolution of data
+                    dw_org=(wmax_data-wmin_data)/(Nf-1)
 
                     # check for negative values in data
                     logic_neg_data = xsec_data_jk < 0
@@ -380,7 +407,10 @@ for f_i in range(len(filelist)):
                     xsec_temp = fun(wvn)
 
                     # just for checking
-                    xsec_int_chk = np.trapz(xsec_temp, wvn)
+                    xsec_temp_chk = deepcopy(xsec_temp)
+                    logic_nan=np.isnan(xsec_temp_chk)
+                    xsec_temp_chk[logic_nan] = 0.
+                    xsec_int_chk = np.trapz(xsec_temp_chk, wvn)
 
                     # integrate cross sections in units of cm²/cm
                     xsec_data_interval = deepcopy(xsec_data_jk)
@@ -411,6 +441,9 @@ for f_i in range(len(filelist)):
                     temp['IntXsec_cm2_per_cm'] = xsec_int_temp
                     temp['DeltaIntXsec_relative'] = dxsec_int_temp
                     temp['pressure'] = np.float64(xsec_data[j][k]['pressure'])
+                    temp['DeltaWvnOfRawdata'] = dw_org
+                    temp['wmin_rawdata'] = wmin_data
+                    temp['wmax_rawdata'] = wmax_data
 
                     data_band_i.append(temp)
 
@@ -419,3 +452,7 @@ for f_i in range(len(filelist)):
 
         with GzipFile(harmonized_folder + harmonized_data_name + '.json.gz', "w") as f:
             f.write(json.dumps(data_band_i).encode("utf-8"))
+
+        # Uncomment for unzipped harmonized files (not used for the coefficient calculations)
+        with open(harmonized_folder + harmonized_data_name + '.json', 'w') as fout:
+            json.dump(data_band_i, fout)

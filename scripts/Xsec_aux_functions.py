@@ -19,6 +19,7 @@ from matplotlib.font_manager import FontProperties
 from scipy.interpolate import interp1d
 from scipy.linalg import lstsq
 
+
 # %% constants
 
 # speed of light
@@ -757,6 +758,84 @@ def getOverlap(a, b):
     '''
 
     return max(0, min(a[1], b[1]) - max(a[0], b[0]))
+
+
+def suggest_banddefinition(wvn_intervalls, dws):
+    '''
+    Function to define the band limits
+
+    Args:
+        wvn_intervalls (Matrix): Matrix with the wavenumber intervals of the
+                                 set of spectra.
+        dws (Vector): Vector with the wavenumber resolution for each set of
+                      sprectra.
+
+    Returns:
+        band_limits_final (List): List of band limits.
+
+    '''
+
+
+    number_of_sets=len(dws)
+
+    #sort the interval edges
+    sorted_limits=np.sort(wvn_intervalls.flatten())
+
+    band_limits=[]
+    band_dw=[]
+
+    #set the band limits according to the sorted limits, but only if there is
+    #overlap with the data
+
+    for i in range(np.size(sorted_limits)-1):
+
+        #temporary band limit
+        band_limit_i=[sorted_limits[i],sorted_limits[i+1]]
+
+        #Chekc overlap with data
+        ol_i=np.zeros(number_of_sets)
+
+        for j in range(number_of_sets):
+
+            ol_i[j]=getOverlap(wvn_intervalls[j, :] ,band_limit_i)
+
+        if np.sum(ol_i)>0:
+            #get minimum dw per band (highest resolution)
+            dw_i = np.min([dws[j] for j in range(number_of_sets) if ol_i[j]>0])
+
+            #Check for too small bands. A band needs at least 2 points.
+            #This means dw_i must <= band_end-band_start
+            if dw_i <= band_limit_i[1] - band_limit_i[0]:
+
+                band_limits.append(band_limit_i)
+                band_dw.append(dw_i)
+
+
+    #now check if two adjacent bands have the same wavenumber resolution. If
+    #two adjacent band have the same resoltion, we can join them.
+    band_limits_final=[]
+    marker=np.zeros(len(band_limits))
+
+    cnt=0
+    for i in range(len(band_limits)-1):
+
+        adjacent = (band_limits[i][1]-band_limits[i+1][0] == 0.)
+        same_dw = (band_dw[i] == band_dw[i+1])
+
+        crit= adjacent and same_dw
+
+        if not crit:
+            cnt+=1
+
+        marker[i+1]=cnt
+
+    for i in range(cnt+1):
+
+        temp=[band_limits[j] for j in range(len(band_limits)) if marker[j] == i ]
+
+        band_limits_final.append([np.min(temp),np.max(temp)])
+
+    return band_limits_final
 
 
 # %% plotting routines
