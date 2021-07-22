@@ -108,7 +108,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             for i in range(len(data)):
                 Xsec[i] = data[i]['xsec'][idx]
 
-            fit_result = xaf.fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.)
+            fit_result = xaf.fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.)
 
             fit_coeffs[:, idx] = fit_result['coefficients']
             N_data[idx] = fit_result['NumberOfPoints']
@@ -662,10 +662,10 @@ if __name__ == '__main__':
     args = parse_args()
 
     # show plots?
-    plotting = args.plots
+    plotting = True#args.plots
 
     # store coefficients?
-    store_coeffs = not args.dry_run
+    store_coeffs = True#not args.dry_run
 
     script_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -690,6 +690,8 @@ if __name__ == '__main__':
 
         if species not in all_species:
             all_species.append(species)
+
+    # all_species=[all_species[8]]
 
     for species in all_species:
         process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=store_coeffs,

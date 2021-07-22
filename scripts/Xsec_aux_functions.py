@@ -289,9 +289,9 @@ def calculate_xsec(T, P, coeffs):
     2d quadratic fit:
     z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
@@ -301,7 +301,7 @@ def calculate_xsec(T, P, coeffs):
     coeffs[5,:]           p02
     '''
 
-    FofP = np.sqrt(P)
+    FofP = P
 
     poly = np.zeros(6)
     poly[0] = 1
@@ -312,12 +312,12 @@ def calculate_xsec(T, P, coeffs):
     poly[5] = FofP ** 2
 
     # allocate
-    sqrtXsec = np.zeros(np.shape(coeffs))
+    Xsec = np.zeros(np.shape(coeffs))
 
     for i in range(6):
-        sqrtXsec[i, :] = coeffs[i, :] * poly[i]
+        Xsec[i, :] = coeffs[i, :] * poly[i]
 
-    Xsec = np.sum(sqrtXsec, axis=0) ** 2
+    Xsec = np.sum(Xsec, axis=0)
 
     return Xsec
 
@@ -352,9 +352,9 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
     2d quadratic fit:
     z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
@@ -395,6 +395,10 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
         # calculate raw xsecs
         xsec = calculate_xsec(T, P, coeffs)
 
+    logic= xsec < 0
+
+    xsec[logic] = 0.
+
     return xsec
 
 
@@ -421,35 +425,29 @@ def xsec_derivative(T, P, coeffs):
     2d quadratic fit:
     z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
 
     '''
 
-    p00 = coeffs[0, :]
+    # p00 = coeffs[0, :]
     p10 = coeffs[1, :]
     p01 = coeffs[2, :]
     p20 = coeffs[3, :]
     p11 = coeffs[4, :]
     p02 = coeffs[5, :]
 
-    FofP = np.sqrt(P)
+    # FofP = P
 
-    DxsecDT = (2.
-               * (p10 + 2. * p20 * T + p11 * FofP)
-               * (p00 + p10 * T + p20 * T ** 2 + p01 * FofP + p11 * T * FofP + p02 * P)
-               )
+    DxsecDT = p10 + 2*p20*T + P*p11
 
-    DxsecDp = (2.
-               * (p01 / (2 * FofP) + p11 * T / (2 * FofP) + p02)
-               * (p00 + p10 * T + p20 * T ** 2 + p01 * FofP + p11 * T * FofP + p02 * P)
-               )
+    DxsecDp = p01 + p11*T + 2*p02*P
 
     return DxsecDT, DxsecDp
 
 
-def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
+def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
     '''
     FUnction to calculate the fit of the xsec at an arbitrary frequency
 
@@ -460,7 +458,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             pressures same lenghth as `T`.
         Xsec: vector
             cross section same length as `T`.
-        min_deltaSqrtP: float, optional
+        min_deltaP: float, optional
             minimum variability of sqrt(`P`) for fit. Defaults to 100
         min_deltaT: float, optional
             minimum variability of `T` for fit. Defaults to 20.
@@ -473,9 +471,9 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
     2d quadratic fit:
     z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
@@ -485,13 +483,13 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
     coeffs[5,:]           p02
     '''
 
-    FofP = np.sqrt(P)
+    FofP = P
 
-    sqrtXsec = np.sqrt(Xsec)
+    FofXsec = Xsec
 
     # check for bad values
-    logic_inf = np.isinf(T) | np.isinf(FofP) | np.isinf(sqrtXsec)
-    logic_nan = np.isnan(T) | np.isnan(FofP) | np.isnan(sqrtXsec)
+    logic_inf = np.isinf(T) | np.isinf(FofP) | np.isinf(FofXsec)
+    logic_nan = np.isnan(T) | np.isnan(FofP) | np.isnan(FofXsec)
     logic_bad = logic_inf | logic_nan
 
     if np.sum(logic_bad) < len(T):
@@ -499,7 +497,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
         # remove bad values
         xData = T[~logic_bad]
         yData = FofP[~logic_bad]
-        zData = sqrtXsec[~logic_bad]
+        zData =FofXsec[~logic_bad]
 
         # get number of unique temperatures and pressures
         N_Tunique = np.size(np.unique(xData))
@@ -507,11 +505,11 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
         # get some information about the data distribution
         Ndata = np.sum(~logic_bad)
-        Delta_SqrtP = max(yData) - min(yData)
+        Delta_P = max(yData) - min(yData)
         Delta_T = max(xData) - min(xData)
 
         # quadratic fit in temperature and pressure
-        if (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 5
+        if (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 5
                 and N_Tunique > 2 and N_Punique > 2):
 
             p, res, rnk, s = fit_poly22(xData, yData, zData)
@@ -519,7 +517,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             coeffs = p
 
         # quadratic fit in temperature and linear in pressure
-        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
+        elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 4
               and N_Tunique > 2 and N_Punique > 1):
 
             p, res, rnk, s = fit_poly21(xData, yData, zData)
@@ -532,7 +530,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             coeffs[4] = p[4]
 
         # linear fit in temperature and quadratic in pressure
-        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
+        elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 4
               and N_Tunique > 1 and N_Punique > 2):
 
             p, res, rnk, s = fit_poly12(xData, yData, zData)
@@ -546,7 +544,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
 
         # linear fit in temperature and pressure
-        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 2
+        elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 2
               and N_Tunique > 1 and N_Punique > 1):
 
             p, res, rnk, s = fit_poly11(xData, yData, zData)
@@ -576,7 +574,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             coeffs[1] = p[1]
 
         # quadratic fit in pressure
-        elif Delta_SqrtP > min_deltaSqrtP and N_Tunique == 1 and N_Punique > 2:
+        elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 2:
 
             p, res, rnk, s = fit_poly2(yData, zData)
 
@@ -586,7 +584,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             coeffs[5] = p[2]
 
         # linear fit in pressure
-        elif Delta_SqrtP > min_deltaSqrtP and N_Tunique == 1 and N_Punique > 1:
+        elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 1:
 
             p, res, rnk, s = fit_poly1(yData, zData)
 
@@ -603,8 +601,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             rnk = np.nan
             s = np.nan
 
-        MinP = min(yData ** 2)
-        MaxP = max(yData ** 2)
+        MinP = min(yData)
+        MaxP = max(yData)
 
         MinT = min(xData)
         MaxT = max(xData)
