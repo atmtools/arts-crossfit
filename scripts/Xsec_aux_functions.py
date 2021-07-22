@@ -31,7 +31,7 @@ c0 = 299792458.0  # [m/s]
 def fit_poly22(xdata, ydata, zdata):
     '''
     2d quadratic fit:
-    z = p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z = p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
     Args:
         xdata:  vector
@@ -53,12 +53,11 @@ def fit_poly22(xdata, ydata, zdata):
 
     '''
 
-    M = np.ones((len(xdata), 6))
+    M = np.ones((len(xdata), 5))
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p01
-    M[:, 3] = xdata ** 2  # p20
-    M[:, 4] = xdata * ydata  # p11
-    M[:, 5] = ydata ** 2  # p02
+    M[:, 3] = xdata ** 2  # p20    
+    M[:, 4] = ydata ** 2  # p02
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -68,7 +67,7 @@ def fit_poly22(xdata, ydata, zdata):
 def fit_poly21(xdata, ydata, zdata):
     '''
     2d semi quadratic fit:
-    z = p00 + p10*x + p01*y + p20*x**2 + p11*x*y
+    z = p00 + p10*x + p01*y + p20*x**2 
 
     Args:
         xdata:  vector
@@ -90,11 +89,10 @@ def fit_poly21(xdata, ydata, zdata):
 
     '''
 
-    M = np.ones((len(xdata), 5))
+    M = np.ones((len(xdata), 4))
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p10
     M[:, 3] = xdata ** 2  # p20
-    M[:, 4] = xdata * ydata  # p11
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -104,7 +102,7 @@ def fit_poly21(xdata, ydata, zdata):
 def fit_poly12(xdata, ydata, zdata):
     '''
     2d semi quadratic fit:
-    z = p00 + p10*x + p01*y + p11*x*y + p02*y**2
+    z = p00 + p10*x + p01*y + p02*y**2
 
     Args:
         xdata:  vector
@@ -126,11 +124,10 @@ def fit_poly12(xdata, ydata, zdata):
 
     '''
 
-    M = np.ones((len(xdata), 5))
+    M = np.ones((len(xdata), 4))
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p10
-    M[:, 3] = xdata * ydata  # p11
-    M[:, 4] = ydata ** 2  # p02
+    M[:, 3] = ydata ** 2  # p02
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -174,7 +171,7 @@ def fit_poly11(xdata, ydata, zdata):
 def fit_poly2(xdata, zdata):
     '''
     1d quadratic fit:
-    # z= p0 + p1*x + p2*x**2
+    z = p0 + p1*x + p2*x**2
 
     Args:
         xdata:  vector
@@ -287,7 +284,7 @@ def calculate_xsec(T, P, coeffs):
 
     The fit model
     2d quadratic fit:
-    z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z= p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
     z=Xsec
     x=T
@@ -296,25 +293,23 @@ def calculate_xsec(T, P, coeffs):
     coeffs[0,:]           p00
     coeffs[1,:]           p10
     coeffs[2,:]           p01
-    coeffs[3,:]           p20
-    coeffs[4,:]           p11
-    coeffs[5,:]           p02
+    coeffs[3,:]           p20    
+    coeffs[4,:]           p02
     '''
 
     FofP = P
 
-    poly = np.zeros(6)
+    poly = np.zeros(5)
     poly[0] = 1
     poly[1] = T
     poly[2] = FofP
     poly[3] = T ** 2
-    poly[4] = T * FofP
-    poly[5] = FofP ** 2
+    poly[4] = FofP ** 2
 
     # allocate
     Xsec = np.zeros(np.shape(coeffs))
 
-    for i in range(6):
+    for i in range(5):
         Xsec[i, :] = coeffs[i, :] * poly[i]
 
     Xsec = np.sum(Xsec, axis=0)
@@ -435,14 +430,13 @@ def xsec_derivative(T, P, coeffs):
     p10 = coeffs[1, :]
     p01 = coeffs[2, :]
     p20 = coeffs[3, :]
-    p11 = coeffs[4, :]
-    p02 = coeffs[5, :]
+    p02 = coeffs[4, :]
 
     # FofP = P
 
-    DxsecDT = p10 + 2*p20*T + P*p11
+    DxsecDT = p10 + 2*p20*T
 
-    DxsecDp = p01 + p11*T + 2*p02*P
+    DxsecDp = p01 + 2*p02*P
 
     return DxsecDT, DxsecDp
 
@@ -469,7 +463,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
     The fit model
     2d quadratic fit:
-    z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z= p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
     z=Xsec
     x=T
@@ -479,8 +473,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
     coeffs[1,:]           p10
     coeffs[2,:]           p01
     coeffs[3,:]           p20
-    coeffs[4,:]           p11
-    coeffs[5,:]           p02
+    coeffs[4,:]           p02
     '''
 
     FofP = P
@@ -522,12 +515,11 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
             p, res, rnk, s = fit_poly21(xData, yData, zData)
 
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = p[0]
             coeffs[1] = p[1]
             coeffs[2] = p[2]
             coeffs[3] = p[3]
-            coeffs[4] = p[4]
 
         # linear fit in temperature and quadratic in pressure
         elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 4
@@ -535,12 +527,11 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
             p, res, rnk, s = fit_poly12(xData, yData, zData)
 
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = p[0]
             coeffs[1] = p[1]
             coeffs[2] = p[2]
             coeffs[4] = p[3]
-            coeffs[5] = p[4]
 
 
         # linear fit in temperature and pressure
@@ -549,7 +540,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
             p, res, rnk, s = fit_poly11(xData, yData, zData)
 
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = p[0]
             coeffs[1] = p[1]
             coeffs[2] = p[2]
@@ -559,7 +550,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
             p, res, rnk, s = fit_poly2(xData, zData)
 
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = p[0]
             coeffs[1] = p[1]
             coeffs[3] = p[2]
@@ -569,7 +560,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
             p, res, rnk, s = fit_poly1(xData, zData)
 
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = p[0]
             coeffs[1] = p[1]
 
@@ -578,7 +569,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
             p, res, rnk, s = fit_poly2(yData, zData)
 
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = p[0]
             coeffs[2] = p[1]
             coeffs[5] = p[2]
@@ -588,13 +579,13 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
             p, res, rnk, s = fit_poly1(yData, zData)
 
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = p[0]
             coeffs[2] = p[1]
 
         # no fit, just median value
         else:
-            coeffs = np.zeros(6)
+            coeffs = np.zeros(5)
             coeffs[0] = np.median(zData)
 
             res = np.sum((zData - coeffs[0]) ** 2)
@@ -608,8 +599,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
         MaxT = max(xData)
 
         fit_result = {}
-        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2'
-        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p11', 'p02']
+        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p02*y**2'
+        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p02']
         fit_result['coefficients'] = coeffs
         fit_result['residuum'] = res
         fit_result['rank'] = rnk
@@ -623,9 +614,9 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.):
 
     else:
         fit_result = {}
-        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2'
-        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p11', 'p02']
-        fit_result['coefficients'] = np.zeros(6)
+        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p02*y**2'
+        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p02']
+        fit_result['coefficients'] = np.zeros(5)
         fit_result['residuum'] = np.nan
         fit_result['rank'] = np.nan
         fit_result['sgl_val'] = np.nan

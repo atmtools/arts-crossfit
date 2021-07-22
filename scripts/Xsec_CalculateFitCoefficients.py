@@ -83,7 +83,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
         # allocate
         fit_goodness = [[]] * len(wvn)
-        fit_coeffs = np.zeros((6, len(wvn)))
+        fit_coeffs = np.zeros((5, len(wvn)))
         N_data = np.zeros(len(wvn))
         MinP = np.zeros(len(wvn)) * np.nan
         MaxP = np.zeros(len(wvn)) * np.nan
@@ -371,9 +371,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 axs3[row, col] = xaf.plot_xsec(wvn, fit_coeffs[i, :], [], ax, xlim=None, xlabel=xlabel, ylabel=ylabel,
                                                plot_title=plot_title)
 
-            y_var = '$y=\\sqrt{\\frac{p}{p_0}}$'
-
-            sup_text = species + ': $a_{xsec}=(' + formula + ')^2$; $x=T/T_0$, ' + y_var
+            
+            sup_text = species + ': $a_{xsec}=' + formula + '$; $x=T/T_0$, $y=p/p_0$'
 
             fig3.suptitle(sup_text)
 
@@ -691,7 +690,7 @@ if __name__ == '__main__':
         if species not in all_species:
             all_species.append(species)
 
-    # all_species=[all_species[8]]
+    all_species=[all_species[0]]
 
     for species in all_species:
         process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=store_coeffs,
