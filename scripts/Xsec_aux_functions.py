@@ -481,7 +481,7 @@ def xsec_derivative(T, P, coeffs):
     return DxsecDT, DxsecDp
 
 
-def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outlier=3.):
+def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outlier=1.5):
     '''
     FUnction to calculate the fit of the xsec at an arbitrary frequency
 
@@ -550,16 +550,16 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
         while cnt<cnt_limit:
 
             # quadratic fit in temperature and pressure
-            if (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 5
-                    and N_Tunique > 2 and N_Punique > 2):
+            if (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 9
+                    and N_Tunique > 6 and N_Punique > 6):
 
                 p, res, rnk, s = fit_poly22(xData, yData, zData)
 
                 coeffs = p
 
             # quadratic fit in temperature and linear in pressure
-            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 4
-                and N_Tunique > 2 and N_Punique > 1):
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 6
+                and N_Tunique > 5 and N_Punique > 1):
 
                 p, res, rnk, s = fit_poly21(xData, yData, zData)
 
@@ -570,8 +570,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[3] = p[3]
 
             # linear fit in temperature and quadratic in pressure
-            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 4
-                and N_Tunique > 1 and N_Punique > 2):
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 6
+                and N_Tunique > 1 and N_Punique > 5):
 
                 p, res, rnk, s = fit_poly12(xData, yData, zData)
 
