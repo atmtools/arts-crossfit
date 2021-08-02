@@ -551,14 +551,14 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
 
             # quadratic fit in temperature and pressure
             if (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 9
-                    and N_Tunique > 6 and N_Punique > 6):
+                    and N_Tunique > 5 and N_Punique > 5):
 
                 p, res, rnk, s = fit_poly22(xData, yData, zData)
 
                 coeffs = p
 
             # quadratic fit in temperature and linear in pressure
-            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 6
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 7
                 and N_Tunique > 5 and N_Punique > 1):
 
                 p, res, rnk, s = fit_poly21(xData, yData, zData)
@@ -570,7 +570,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[3] = p[3]
 
             # linear fit in temperature and quadratic in pressure
-            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 6
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 7
                 and N_Tunique > 1 and N_Punique > 5):
 
                 p, res, rnk, s = fit_poly12(xData, yData, zData)
@@ -594,7 +594,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[2] = p[2]
 
             # quadratic fit in temperature
-            elif Delta_T > min_deltaT and N_Tunique > 2 and N_Punique == 1:
+            elif Delta_T > min_deltaT and N_Tunique > 5 and N_Punique == 1:
 
                 p, res, rnk, s = fit_poly2(xData, zData)
 
@@ -613,7 +613,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[1] = p[1]
 
             # quadratic fit in pressure
-            elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 2:
+            elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 5:
 
                 p, res, rnk, s = fit_poly2(yData, zData)
 
@@ -1029,7 +1029,7 @@ def default_plot_format(ax, font_name=None):
 
 def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
               plot_title=None, legend=False, font_name=None, labels=['obs','fit'],
-              linewidth=0.25):
+              linewidth=0.25, fontsize=10):
     '''
     Wrapper to plot up to two crossections in a plot. If only one cross section
     should be plotted set XsecFit to an empty list.
@@ -1082,7 +1082,7 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
 
     if plot_title != None:
         ax.set_title(plot_title, fontproperties=font)  # Add a title to the axes.
-        ax.title.set_fontsize(10)
+        ax.title.set_fontsize(fontsize)
 
     if legend:
         ax.legend()
