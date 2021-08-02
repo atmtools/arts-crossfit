@@ -19,6 +19,7 @@ from matplotlib.font_manager import FontProperties
 from scipy.interpolate import interp1d
 from scipy.linalg import lstsq
 
+
 # %% constants
 
 # speed of light
@@ -30,7 +31,7 @@ c0 = 299792458.0  # [m/s]
 def fit_poly22(xdata, ydata, zdata):
     '''
     2d quadratic fit:
-    z = p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z = p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
     Args:
         xdata:  vector
@@ -52,12 +53,11 @@ def fit_poly22(xdata, ydata, zdata):
 
     '''
 
-    M = np.ones((len(xdata), 6))
+    M = np.ones((len(xdata), 5))
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p01
     M[:, 3] = xdata ** 2  # p20
-    M[:, 4] = xdata * ydata  # p11
-    M[:, 5] = ydata ** 2  # p02
+    M[:, 4] = ydata ** 2  # p02
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -67,7 +67,7 @@ def fit_poly22(xdata, ydata, zdata):
 def fit_poly21(xdata, ydata, zdata):
     '''
     2d semi quadratic fit:
-    z = p00 + p10*x + p01*y + p20*x**2 + p11*x*y
+    z = p00 + p10*x + p01*y + p20*x**2
 
     Args:
         xdata:  vector
@@ -89,11 +89,10 @@ def fit_poly21(xdata, ydata, zdata):
 
     '''
 
-    M = np.ones((len(xdata), 5))
+    M = np.ones((len(xdata), 4))
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p10
     M[:, 3] = xdata ** 2  # p20
-    M[:, 4] = xdata * ydata  # p11
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -103,7 +102,7 @@ def fit_poly21(xdata, ydata, zdata):
 def fit_poly12(xdata, ydata, zdata):
     '''
     2d semi quadratic fit:
-    z = p00 + p10*x + p01*y + p11*x*y + p02*y**2
+    z = p00 + p10*x + p01*y + p02*y**2
 
     Args:
         xdata:  vector
@@ -125,11 +124,10 @@ def fit_poly12(xdata, ydata, zdata):
 
     '''
 
-    M = np.ones((len(xdata), 5))
+    M = np.ones((len(xdata), 4))
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p10
-    M[:, 3] = xdata * ydata  # p11
-    M[:, 4] = ydata ** 2  # p02
+    M[:, 3] = ydata ** 2  # p02
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -173,7 +171,7 @@ def fit_poly11(xdata, ydata, zdata):
 def fit_poly2(xdata, zdata):
     '''
     1d quadratic fit:
-    # z= p0 + p1*x + p2*x**2
+    z = p0 + p1*x + p2*x**2
 
     Args:
         xdata:  vector
@@ -286,37 +284,55 @@ def calculate_xsec(T, P, coeffs):
 
     The fit model
     2d quadratic fit:
-    z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z= p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
     coeffs[2,:]           p01
     coeffs[3,:]           p20
-    coeffs[4,:]           p11
-    coeffs[5,:]           p02
+    coeffs[4,:]           p02
     '''
 
-    FofP = np.sqrt(P)
 
-    poly = np.zeros(6)
-    poly[0] = 1
-    poly[1] = T
-    poly[2] = FofP
-    poly[3] = T ** 2
-    poly[4] = T * FofP
-    poly[5] = FofP ** 2
 
-    # allocate
-    sqrtXsec = np.zeros(np.shape(coeffs))
+    #distinguish if we calculate xsec for a lot of frequencies
+    if len(np.shape(coeffs))>1:
+        poly = np.zeros(5)
+        poly[0] = 1
+        poly[1] = T
+        poly[2] = P
+        poly[3] = T ** 2
+        poly[4] = P ** 2
 
-    for i in range(6):
-        sqrtXsec[i, :] = coeffs[i, :] * poly[i]
+        # allocate
+        Xsec = np.zeros(np.shape(coeffs))
 
-    Xsec = np.sum(sqrtXsec, axis=0) ** 2
+        for i in range(5):
+            Xsec[i, :] = coeffs[i, :] * poly[i]
+
+    #or for a lot of states
+    else:
+        poly = np.zeros((5,len(T)))
+        poly[0,:] = 1.
+        poly[1,:] = T
+        poly[2,:] = P
+        poly[3,:] = T ** 2
+        poly[4,:] = P ** 2
+
+        # allocate
+        Xsec = np.zeros( (len(coeffs),len(T)) )
+
+        for i in range(5):
+            Xsec[i, :] = coeffs[i] * poly[i,:]
+
+
+    Xsec = np.sum(Xsec, axis=0)
+
+    Xsec[Xsec<0]=0.
 
     return Xsec
 
@@ -349,18 +365,17 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
 
     The fit model
     2d quadratic fit:
-    z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z= p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
     coeffs[2,:]           p01
     coeffs[3,:]           p20
-    coeffs[4,:]           p11
-    coeffs[5,:]           p02
+    coeffs[4,:]           p02
     '''
 
     if (P < minP or P > maxP or
@@ -394,6 +409,25 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
         # calculate raw xsecs
         xsec = calculate_xsec(T, P, coeffs)
 
+    #Check for negative values and remove them without introducing bias, meaning
+    #the integral over the spectrum must not change.
+    logic = xsec < 0
+    if np.sum(logic) > 0:
+
+        #original sum over spectrum
+        sumX_org=np.sum(xsec);
+
+        #remove negative values
+        xsec[logic]=0
+
+        if sumX_org>=0:
+
+            #estimate ratio between altered and original sum of spectrum
+            w=sumX_org/np.sum(xsec)
+
+            #scale altered spectrum
+            xsec=xsec*w
+
     return xsec
 
 
@@ -418,37 +452,36 @@ def xsec_derivative(T, P, coeffs):
 
     The fit model
     2d quadratic fit:
-    z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z= p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
+
+    coeffs[0,:]           p00
+    coeffs[1,:]           p10
+    coeffs[2,:]           p01
+    coeffs[3,:]           p20
+    coeffs[4,:]           p02
 
     '''
 
-    p00 = coeffs[0, :]
+    # p00 = coeffs[0, :]
     p10 = coeffs[1, :]
     p01 = coeffs[2, :]
     p20 = coeffs[3, :]
-    p11 = coeffs[4, :]
-    p02 = coeffs[5, :]
+    p02 = coeffs[4, :]
 
-    FofP = np.sqrt(P)
+    # FofP = P
 
-    DxsecDT = (2.
-               * (p10 + 2. * p20 * T + p11 * FofP)
-               * (p00 + p10 * T + p20 * T ** 2 + p01 * FofP + p11 * T * FofP + p02 * P)
-               )
+    DxsecDT = p10 + 2*p20*T
 
-    DxsecDp = (2.
-               * (p01 / (2 * FofP) + p11 * T / (2 * FofP) + p02)
-               * (p00 + p10 * T + p20 * T ** 2 + p01 * FofP + p11 * T * FofP + p02 * P)
-               )
+    DxsecDp = p01 + 2*p02*P
 
     return DxsecDT, DxsecDp
 
 
-def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
+def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outlier=1.5):
     '''
     FUnction to calculate the fit of the xsec at an arbitrary frequency
 
@@ -459,10 +492,14 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
             pressures same lenghth as `T`.
         Xsec: vector
             cross section same length as `T`.
-        min_deltaSqrtP: float, optional
+        min_deltaP: float, optional
             minimum variability of sqrt(`P`) for fit. Defaults to 100
         min_deltaT: float, optional
             minimum variability of `T` for fit. Defaults to 20.
+        cnt_limit:  integer, optional
+            maximum number of iteration of the fit due to outlier removal.
+        k_outlier:  float, optional
+            scaling factor for outlier detection
 
     Returns:
         fit_result: dictionary
@@ -470,27 +507,26 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
     The fit model
     2d quadratic fit:
-    z= p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2
+    z= p00 + p10*x + p01*y + p20*x**2 + p02*y**2
 
-    z=sqrt(Xsec)
+    z=Xsec
     x=T
-    y=sqrt(P)
+    y=P
 
     coeffs[0,:]           p00
     coeffs[1,:]           p10
     coeffs[2,:]           p01
     coeffs[3,:]           p20
-    coeffs[4,:]           p11
-    coeffs[5,:]           p02
+    coeffs[4,:]           p02
     '''
 
-    FofP = np.sqrt(P)
+    FofP = P
 
-    sqrtXsec = np.sqrt(Xsec)
+    FofXsec = Xsec
 
     # check for bad values
-    logic_inf = np.isinf(T) | np.isinf(FofP) | np.isinf(sqrtXsec)
-    logic_nan = np.isnan(T) | np.isnan(FofP) | np.isnan(sqrtXsec)
+    logic_inf = np.isinf(T) | np.isinf(FofP) | np.isinf(FofXsec)
+    logic_nan = np.isnan(T) | np.isnan(FofP) | np.isnan(FofXsec)
     logic_bad = logic_inf | logic_nan
 
     if np.sum(logic_bad) < len(T):
@@ -498,121 +534,144 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
         # remove bad values
         xData = T[~logic_bad]
         yData = FofP[~logic_bad]
-        zData = sqrtXsec[~logic_bad]
+        zData =FofXsec[~logic_bad]
 
         # get number of unique temperatures and pressures
         N_Tunique = np.size(np.unique(xData))
         N_Punique = np.size(np.unique(yData))
 
-        # get some information about the data distribution
+        # get some information about the distribution of data
         Ndata = np.sum(~logic_bad)
-        Delta_SqrtP = max(yData) - min(yData)
+
+        Delta_P = max(yData) - min(yData)
         Delta_T = max(xData) - min(xData)
 
-        # quadratic fit in temperature and pressure
-        if (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 5
-                and N_Tunique > 2 and N_Punique > 2):
+        cnt=0
+        while cnt<cnt_limit:
 
-            p, res, rnk, s = fit_poly22(xData, yData, zData)
+            # quadratic fit in temperature and pressure
+            if (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 9
+                    and N_Tunique > 5 and N_Punique > 5):
 
-            coeffs = p
+                p, res, rnk, s = fit_poly22(xData, yData, zData)
 
-        # quadratic fit in temperature and linear in pressure
-        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
-              and N_Tunique > 2 and N_Punique > 1):
+                coeffs = p
 
-            p, res, rnk, s = fit_poly21(xData, yData, zData)
+            # quadratic fit in temperature and linear in pressure
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 7
+                and N_Tunique > 5 and N_Punique > 1):
 
-            coeffs = np.zeros(6)
-            coeffs[0] = p[0]
-            coeffs[1] = p[1]
-            coeffs[2] = p[2]
-            coeffs[3] = p[3]
-            coeffs[4] = p[4]
+                p, res, rnk, s = fit_poly21(xData, yData, zData)
 
-        # linear fit in temperature and quadratic in pressure
-        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 4
-              and N_Tunique > 1 and N_Punique > 2):
+                coeffs = np.zeros(5)
+                coeffs[0] = p[0]
+                coeffs[1] = p[1]
+                coeffs[2] = p[2]
+                coeffs[3] = p[3]
 
-            p, res, rnk, s = fit_poly12(xData, yData, zData)
+            # linear fit in temperature and quadratic in pressure
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 7
+                and N_Tunique > 1 and N_Punique > 5):
 
-            coeffs = np.zeros(6)
-            coeffs[0] = p[0]
-            coeffs[1] = p[1]
-            coeffs[2] = p[2]
-            coeffs[4] = p[3]
-            coeffs[5] = p[4]
+                p, res, rnk, s = fit_poly12(xData, yData, zData)
+
+                coeffs = np.zeros(5)
+                coeffs[0] = p[0]
+                coeffs[1] = p[1]
+                coeffs[2] = p[2]
+                coeffs[4] = p[3]
 
 
-        # linear fit in temperature and pressure
-        elif (Delta_SqrtP >= min_deltaSqrtP and Delta_T > min_deltaT and Ndata > 2
-              and N_Tunique > 1 and N_Punique > 1):
+            # linear fit in temperature and pressure
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 2
+                and N_Tunique > 1 and N_Punique > 1):
 
-            p, res, rnk, s = fit_poly11(xData, yData, zData)
+                p, res, rnk, s = fit_poly11(xData, yData, zData)
 
-            coeffs = np.zeros(6)
-            coeffs[0] = p[0]
-            coeffs[1] = p[1]
-            coeffs[2] = p[2]
+                coeffs = np.zeros(5)
+                coeffs[0] = p[0]
+                coeffs[1] = p[1]
+                coeffs[2] = p[2]
 
-        # quadratic fit in temperature
-        elif Delta_T > min_deltaT and N_Tunique > 2 and N_Punique == 1:
+            # quadratic fit in temperature
+            elif Delta_T > min_deltaT and N_Tunique > 5 and N_Punique == 1:
 
-            p, res, rnk, s = fit_poly2(xData, zData)
+                p, res, rnk, s = fit_poly2(xData, zData)
 
-            coeffs = np.zeros(6)
-            coeffs[0] = p[0]
-            coeffs[1] = p[1]
-            coeffs[3] = p[2]
+                coeffs = np.zeros(5)
+                coeffs[0] = p[0]
+                coeffs[1] = p[1]
+                coeffs[3] = p[2]
 
-        # linear fit in temperature
-        elif Delta_T > min_deltaT and N_Tunique > 1 and N_Punique == 1:
+            # linear fit in temperature
+            elif Delta_T > min_deltaT and N_Tunique > 1 and N_Punique == 1:
 
-            p, res, rnk, s = fit_poly1(xData, zData)
+                p, res, rnk, s = fit_poly1(xData, zData)
 
-            coeffs = np.zeros(6)
-            coeffs[0] = p[0]
-            coeffs[1] = p[1]
+                coeffs = np.zeros(5)
+                coeffs[0] = p[0]
+                coeffs[1] = p[1]
 
-        # quadratic fit in pressure
-        elif Delta_SqrtP > min_deltaSqrtP and N_Tunique == 1 and N_Punique > 2:
+            # quadratic fit in pressure
+            elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 5:
 
-            p, res, rnk, s = fit_poly2(yData, zData)
+                p, res, rnk, s = fit_poly2(yData, zData)
 
-            coeffs = np.zeros(6)
-            coeffs[0] = p[0]
-            coeffs[2] = p[1]
-            coeffs[5] = p[2]
+                coeffs = np.zeros(5)
+                coeffs[0] = p[0]
+                coeffs[2] = p[1]
+                coeffs[5] = p[2]
 
-        # linear fit in pressure
-        elif Delta_SqrtP > min_deltaSqrtP and N_Tunique == 1 and N_Punique > 1:
+            # linear fit in pressure
+            elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 1:
 
-            p, res, rnk, s = fit_poly1(yData, zData)
+                p, res, rnk, s = fit_poly1(yData, zData)
 
-            coeffs = np.zeros(6)
-            coeffs[0] = p[0]
-            coeffs[2] = p[1]
+                coeffs = np.zeros(5)
+                coeffs[0] = p[0]
+                coeffs[2] = p[1]
 
-        # no fit, just median value
-        else:
-            coeffs = np.zeros(6)
-            coeffs[0] = np.median(zData)
+            # no fit, just median value
+            else:
+                coeffs = np.zeros(5)
+                coeffs[0] = np.median(zData)
 
-            res = np.sum((zData - coeffs[0]) ** 2)
-            rnk = np.nan
-            s = np.nan
+                res = np.sum((zData - coeffs[0]) ** 2)
+                rnk = np.nan
+                s = np.nan
 
-        MinP = min(yData ** 2)
-        MaxP = max(yData ** 2)
+
+            if k_outlier>0 or np.sum(coeffs==0)>=4:
+                #Calculate residuals
+                zData_fit=calculate_xsec(xData, yData, coeffs)
+
+                residuals=zData_fit-zData
+
+                #Check for outlier
+                logic_out=np.logical_and(abs(residuals)>np.std(zData)*k_outlier, np.std(zData)>0.)
+
+                if np.sum(logic_out)>0:
+                    cnt+=1
+
+                    if cnt<cnt_limit:
+                        xData=xData[~logic_out]
+                        yData=yData[~logic_out]
+                        zData=zData[~logic_out]
+                        Ndata = np.sum(~logic_out)
+                else:
+                    cnt=cnt_limit
+
+        MinP = min(yData)
+        MaxP = max(yData)
 
         MinT = min(xData)
         MaxT = max(xData)
 
         fit_result = {}
-        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2'
-        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p11', 'p02']
+        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p02*y**2'
+        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p02']
         fit_result['coefficients'] = coeffs
-        fit_result['residuum'] = res
+        fit_result['sum of residuals'] = res
         fit_result['rank'] = rnk
         fit_result['sgl_val'] = s
         fit_result['MinP'] = MinP
@@ -624,10 +683,10 @@ def fit_xsec_data(T, P, Xsec, min_deltaSqrtP=100, min_deltaT=20.):
 
     else:
         fit_result = {}
-        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p11*x*y + p02*y**2'
-        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p11', 'p02']
-        fit_result['coefficients'] = np.zeros(6)
-        fit_result['residuum'] = np.nan
+        fit_result['formula'] = 'p00 + p10*x + p01*y + p20*x**2 + p02*y**2'
+        fit_result['coeff_names'] = ['p00', 'p10', 'p01', 'p20', 'p02']
+        fit_result['coefficients'] = np.zeros(5)
+        fit_result['sum of residuals'] = np.nan
         fit_result['rank'] = np.nan
         fit_result['sgl_val'] = np.nan
         fit_result['MinP'] = np.inf
@@ -739,6 +798,24 @@ def calculate_cross_sections(wvn_user, xsec_data, temperature=273., pressure=101
 
 # %% aux function
 
+def find_nearest(a, a0):
+    '''
+    Element in nd array `a` closest to the scalar value `a0`
+    (Finds the needle in the haystack)
+
+    Args:
+        a (nd array): Haystack.
+        a0 (scalar): needle
+
+    Returns:
+        found value (scalar): most similar needle
+        index of found value
+
+    '''
+
+    idx = np.abs(a - a0).argmin()
+    return a.flat[idx], idx
+
 def getOverlap(a, b):
     '''
     Function to calculate the overlapp between two ranges given
@@ -757,6 +834,84 @@ def getOverlap(a, b):
     '''
 
     return max(0, min(a[1], b[1]) - max(a[0], b[0]))
+
+
+def suggest_banddefinition(wvn_intervalls, dws):
+    '''
+    Function to define the band limits
+
+    Args:
+        wvn_intervalls (Matrix): Matrix with the wavenumber intervals of the
+                                 set of spectra.
+        dws (Vector): Vector with the wavenumber resolution for each set of
+                      sprectra.
+
+    Returns:
+        band_limits_final (List): List of band limits.
+
+    '''
+
+
+    number_of_sets=len(dws)
+
+    #sort the interval edges
+    sorted_limits=np.sort(wvn_intervalls.flatten())
+
+    band_limits=[]
+    band_dw=[]
+
+    #set the band limits according to the sorted limits, but only if there is
+    #overlap with the data
+
+    for i in range(np.size(sorted_limits)-1):
+
+        #temporary band limit
+        band_limit_i=[sorted_limits[i],sorted_limits[i+1]]
+
+        #Chekc overlap with data
+        ol_i=np.zeros(number_of_sets)
+
+        for j in range(number_of_sets):
+
+            ol_i[j]=getOverlap(wvn_intervalls[j, :] ,band_limit_i)
+
+        if np.sum(ol_i)>0:
+            #get minimum dw per band (highest resolution)
+            dw_i = np.min([dws[j] for j in range(number_of_sets) if ol_i[j]>0])
+
+            #Check for too small bands. A band needs at least 2 points.
+            #This means dw_i must <= band_end-band_start
+            if dw_i <= band_limit_i[1] - band_limit_i[0]:
+
+                band_limits.append(band_limit_i)
+                band_dw.append(dw_i)
+
+
+    #now check if two adjacent bands have the same wavenumber resolution. If
+    #two adjacent band have the same resoltion, we can join them.
+    band_limits_final=[]
+    marker=np.zeros(len(band_limits))
+
+    cnt=0
+    for i in range(len(band_limits)-1):
+
+        adjacent = (band_limits[i][1]-band_limits[i+1][0] == 0.)
+        same_dw = (band_dw[i] == band_dw[i+1])
+
+        crit= adjacent and same_dw
+
+        if not crit:
+            cnt+=1
+
+        marker[i+1]=cnt
+
+    for i in range(cnt+1):
+
+        temp=[band_limits[j] for j in range(len(band_limits)) if marker[j] == i ]
+
+        band_limits_final.append([np.min(temp),np.max(temp)])
+
+    return band_limits_final
 
 
 # %% plotting routines
@@ -873,7 +1028,8 @@ def default_plot_format(ax, font_name=None):
 
 
 def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
-              plot_title=None, legend=False, font_name=None):
+              plot_title=None, legend=False, font_name=None, labels=['obs','fit'],
+              linewidth=0.25, fontsize=10):
     '''
     Wrapper to plot up to two crossections in a plot. If only one cross section
     should be plotted set XsecFit to an empty list.
@@ -908,12 +1064,12 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
 
     ax, font = default_plot_format(ax, font_name)
 
-    linewidth = 0.25
 
-    ax.plot(wvn, Xsec, label='obs', linewidth=linewidth)
+
+    ax.plot(wvn, Xsec, label=labels[0], linewidth=linewidth)
 
     if len(XsecFit) > 0:
-        ax.plot(wvn, XsecFit, '-.', label='fit', linewidth=linewidth)
+        ax.plot(wvn, XsecFit, '-.', label=labels[1], linewidth=linewidth)
 
     if xlim != None:
         ax.set_xlim(xlim[0], xlim[1])
@@ -926,7 +1082,7 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
 
     if plot_title != None:
         ax.set_title(plot_title, fontproperties=font)  # Add a title to the axes.
-        ax.title.set_fontsize(10)
+        ax.title.set_fontsize(fontsize)
 
     if legend:
         ax.legend()
