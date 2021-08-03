@@ -332,8 +332,6 @@ def calculate_xsec(T, P, coeffs):
 
     Xsec = np.sum(Xsec, axis=0)
 
-    Xsec[Xsec<0]=0.
-
     return Xsec
 
 
