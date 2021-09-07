@@ -338,7 +338,7 @@ def calculate_xsec(T, P, coeffs):
 def calculate_xsec_fullmodel(T, P, coeffs):
     '''
     Function to calculate the absorption cross section from the fitted
-    coefficients including extrapolation
+    coefficients including check for negative values.
 
     Args:
         T: float
@@ -434,8 +434,6 @@ def xsec_derivative(T, P, coeffs):
     p20 = coeffs[3, :]
     p02 = coeffs[4, :]
 
-    # FofP = P
-
     DxsecDT = p10 + 2*p20*T
 
     DxsecDp = p01 + 2*p02*P
@@ -482,21 +480,21 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_ou
     coeffs[4,:]           p02
     '''
 
-    FofP = P
+    # FofP = P
 
-    FofXsec = Xsec
+    # FofXsec = Xsec
 
     # check for bad values
-    logic_inf = np.isinf(T) | np.isinf(FofP) | np.isinf(FofXsec)
-    logic_nan = np.isnan(T) | np.isnan(FofP) | np.isnan(FofXsec)
+    logic_inf = np.isinf(T) | np.isinf(P) | np.isinf(Xsec)
+    logic_nan = np.isnan(T) | np.isnan(P) | np.isnan(Xsec)
     logic_bad = logic_inf | logic_nan
 
     if np.sum(logic_bad) < len(T):
 
         # remove bad values
         xData = T[~logic_bad]
-        yData = FofP[~logic_bad]
-        zData =FofXsec[~logic_bad]
+        yData = P[~logic_bad]
+        zData = Xsec[~logic_bad]
 
         # get number of unique temperatures and pressures
         N_Tunique = np.size(np.unique(xData))
@@ -737,16 +735,8 @@ def calculate_cross_sections(wvn_user, xsec_data, temperature=273., pressure=101
         # fit coefficients of band m
         coeffs_m = xsec_data.fitcoeffs[m].data.data.transpose()
 
-        # Limits of the data. Outside of this limits the cross section are linearly
-        # extrapolated.
-        MinP = xsec_data.fitminpressures.data[m]
-        MaxP = xsec_data.fitmaxpressures.data[m]
-        MinT = xsec_data.fitmintemperatures.data[m]
-        MaxT = xsec_data.fitmaxtemperatures.data[m]
-
         # Calculate the cross section on their internal frequency grid
-        xsec_temp = calculate_xsec_fullmodel(temperature, pressure, coeffs_m,
-                                             minT=MinT, maxT=MaxT, minP=MinP, maxP=MaxP)
+        xsec_temp = calculate_xsec_fullmodel(temperature, pressure, coeffs_m)
 
         # Interpolate cross sections to user grid
         f_int = interp1d(freq_data, xsec_temp, fill_value=0., bounds_error=False)
@@ -1016,6 +1006,14 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
             flag to switch on or off the plot legend. default is False.
         font_name: str
             font name.
+        labels: list of strings
+            labels 
+        linewidth: float or vector/list of length 2
+            line width of plotted lines
+        fontsize: float
+            font size
+        formatter: boolean
+            flag to switch on or off the internal plot formatter
 
 
     Returns:
