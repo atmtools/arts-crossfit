@@ -335,7 +335,7 @@ def calculate_xsec(T, P, coeffs):
     return Xsec
 
 
-def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np.inf):
+def calculate_xsec_fullmodel(T, P, coeffs):
     '''
     Function to calculate the absorption cross section from the fitted
     coefficients including extrapolation
@@ -347,14 +347,6 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
             Pressure in Pa.
         coeffs: matrix
             fit coefficients.
-        minT: float
-            minimum temperature of the data in K.
-        maxT: float
-            maximum temperature of the data in K.
-        minP: float
-            minimum pressure of the data in Pa.
-        maxP: float
-            maximum pressure of the data in Pa.
 
     Returns:
         Xsec: vector
@@ -376,36 +368,8 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
     coeffs[4,:]           p02
     '''
 
-    if (P < minP or P > maxP or
-            T < minT or T > maxT):
-
-        if P < minP:
-            P0 = minP
-
-        elif P > maxP:
-            P0 = maxP
-        else:
-            P0 = P
-        # P=P0
-
-        if T < minT:
-            T0 = minT
-
-        elif T > maxT:
-            T0 = maxT
-
-        else:
-            T0 = T
-
-        xsec_0 = calculate_xsec(T0, P0, coeffs)
-
-        DxsecDT, DxsecDp = xsec_derivative(T0, P0, coeffs)
-
-        xsec = xsec_0 + DxsecDT * (T - T0) + DxsecDp * (P - P0)
-
-    else:
-        # calculate raw xsecs
-        xsec = calculate_xsec(T, P, coeffs)
+    # calculate raw xsecs
+    xsec = calculate_xsec(T, P, coeffs)
 
     #Check for negative values and remove them without introducing bias, meaning
     #the integral over the spectrum must not change.
@@ -413,7 +377,7 @@ def calculate_xsec_fullmodel(T, P, coeffs, minT=0., maxT=np.inf, minP=0, maxP=np
     if np.sum(logic) > 0:
 
         #original sum over spectrum
-        sumX_org=np.sum(xsec);
+        sumX_org=np.sum(xsec)
 
         #remove negative values
         xsec[logic]=0
@@ -479,7 +443,7 @@ def xsec_derivative(T, P, coeffs):
     return DxsecDT, DxsecDp
 
 
-def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outlier=1.5):
+def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_outlier=1.5):
     '''
     FUnction to calculate the fit of the xsec at an arbitrary frequency
 
@@ -548,16 +512,16 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
         while cnt<cnt_limit:
 
             # quadratic fit in temperature and pressure
-            if (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 9
-                    and N_Tunique > 5 and N_Punique > 5):
+            if (Delta_P >= min_deltaP and Delta_T > 2*min_deltaT and Ndata > 8
+                    and N_Tunique > 4 and N_Punique > 4):
 
                 p, res, rnk, s = fit_poly22(xData, yData, zData)
 
                 coeffs = p
 
             # quadratic fit in temperature and linear in pressure
-            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 7
-                and N_Tunique > 5 and N_Punique > 1):
+            elif (Delta_P >= min_deltaP and Delta_T > 2*min_deltaT and Ndata > 5
+                and N_Tunique > 4 and N_Punique > 1):
 
                 p, res, rnk, s = fit_poly21(xData, yData, zData)
 
@@ -568,8 +532,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[3] = p[3]
 
             # linear fit in temperature and quadratic in pressure
-            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 7
-                and N_Tunique > 1 and N_Punique > 5):
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 5
+                and N_Tunique > 1 and N_Punique > 4):
 
                 p, res, rnk, s = fit_poly12(xData, yData, zData)
 
@@ -581,7 +545,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
 
 
             # linear fit in temperature and pressure
-            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 2
+            elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 3
                 and N_Tunique > 1 and N_Punique > 1):
 
                 p, res, rnk, s = fit_poly11(xData, yData, zData)
@@ -592,7 +556,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[2] = p[2]
 
             # quadratic fit in temperature
-            elif Delta_T > min_deltaT and N_Tunique > 5 and N_Punique == 1:
+            elif Delta_T > 2*min_deltaT and N_Tunique > 4 and N_Punique == 1:
 
                 p, res, rnk, s = fit_poly2(xData, zData)
 
@@ -602,8 +566,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[3] = p[2]
 
             # linear fit in temperature
-            elif Delta_T > min_deltaT and N_Tunique > 1 and N_Punique == 1:
-
+            elif Delta_T > min_deltaT and N_Tunique > 2:
                 p, res, rnk, s = fit_poly1(xData, zData)
 
                 coeffs = np.zeros(5)
@@ -611,7 +574,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[1] = p[1]
 
             # quadratic fit in pressure
-            elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 5:
+            elif Delta_P > min_deltaP and N_Punique > 4:
 
                 p, res, rnk, s = fit_poly2(yData, zData)
 
@@ -621,7 +584,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=100, min_deltaT=20.,cnt_limit=2, k_outl
                 coeffs[5] = p[2]
 
             # linear fit in pressure
-            elif Delta_P > min_deltaP and N_Tunique == 1 and N_Punique > 1:
+            elif Delta_P > min_deltaP and N_Punique > 2:
 
                 p, res, rnk, s = fit_poly1(yData, zData)
 
@@ -1027,7 +990,7 @@ def default_plot_format(ax, font_name=None):
 
 def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
               plot_title=None, legend=False, font_name=None, labels=['obs','fit'],
-              linewidth=0.25, fontsize=10):
+              linewidth=0.25, fontsize=10, formatter=True):
     '''
     Wrapper to plot up to two crossections in a plot. If only one cross section
     should be plotted set XsecFit to an empty list.
@@ -1059,15 +1022,21 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
         ax: matplotlib axis object or ndarray of axis objects
 
     '''
+    if formatter:
+        ax, font = default_plot_format(ax, font_name)        
+    else:
+        font = FontProperties()
+        if font_name is not None:
+            font.set_name(font_name)
+            
+    if np.size(linewidth)==1:
+        linewidth=np.ones(2)*linewidth
 
-    ax, font = default_plot_format(ax, font_name)
 
-
-
-    ax.plot(wvn, Xsec, label=labels[0], linewidth=linewidth)
+    ax.plot(wvn, Xsec, label=labels[0], linewidth=linewidth[0])
 
     if len(XsecFit) > 0:
-        ax.plot(wvn, XsecFit, '-.', label=labels[1], linewidth=linewidth)
+        ax.plot(wvn, XsecFit, '-.', label=labels[1], linewidth=linewidth[1])
 
     if xlim != None:
         ax.set_xlim(xlim[0], xlim[1])
