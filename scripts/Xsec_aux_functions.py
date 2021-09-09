@@ -510,7 +510,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_ou
         while cnt<cnt_limit:
 
             # quadratic fit in temperature and pressure
-            if (Delta_P >= min_deltaP and Delta_T > 2*min_deltaT and Ndata > 8
+            if (Delta_P >= min_deltaP and Delta_T > 2*min_deltaT and Ndata > np.inf#8#
                     and N_Tunique > 4 and N_Punique > 4):
 
                 p, res, rnk, s = fit_poly22(xData, yData, zData)

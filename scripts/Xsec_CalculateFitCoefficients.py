@@ -20,6 +20,7 @@ import json
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from gzip import GzipFile
+import multiprocessing as mp
 
 import numpy as np
 import pyarts
@@ -100,7 +101,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
         for idx in range(len(wvn)):
 
-            if idx % 100 == 0:
+            if idx % 5000 == 0:
                 print(str(idx))
 
             # allocate
@@ -633,10 +634,14 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             print('Plotting fig7')
             
             #get frequency indices at nop positions uniformly distributed in amplitude
-            xsec_test = xaf.calculate_xsec_fullmodel(293.15, 101325.,fit_coeffs)
+            # xsec_test = xaf.calculate_xsec_fullmodel(293.15, 101325.,fit_coeffs)
+            xsec_test=np.array(data[0]['xsec'])
             index_sort=np.argsort(xsec_test)            
-            index_temp=np.asanyarray(np.linspace(0,len(fit_coeffs[0,:])-1,nop),dtype=int)
+            # index_temp=np.asarray(np.linspace(0,len(fit_coeffs[0,:])-1,nop),dtype=int)
+            L=len(xsec_test)-1
+            index_temp=np.asarray(np.arange(0.2,1.1,.1)*L, dtype=int)
             index_wvn=index_sort[index_temp]
+            index_wvn=np.sort(index_wvn)
             
             
             #get data for these nine points
@@ -761,10 +766,17 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 def parse_args():
     """Parse commandline arguments"""
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    
     parser.add_argument("-p",
-                        "--plots",
+                        "--processes",
+                        type=int,
+                        default=1,
+                        help="Number of processes.")
+    
+    parser.add_argument("-f",
+                        "--figures",
                         action="store_true",
-                        help="Generate diagnostic plots.")
+                        help="Generate diagnostic figures.")
     parser.add_argument("-n",
                         "--dry-run",
                         action="store_true",
@@ -773,16 +785,20 @@ def parse_args():
     return parser.parse_args()
 
 
+
 # %%
 if __name__ == '__main__':
     args = parse_args()
 
     # show plots?
-    plotting = args.plots
+    plotting =  args.figures
 
     # store coefficients?
     store_coeffs = not args.dry_run
-
+    
+    # multiprocessing
+    N_process=args.processes 
+    
     script_path = os.path.dirname(os.path.realpath(__file__))
 
     # folder of harmonized data
@@ -808,7 +824,21 @@ if __name__ == '__main__':
             all_species.append(species)
 
     # all_species=[all_species[31]]
+    if N_process==1:
 
-    for species in all_species:
-        process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=store_coeffs,
-                                  plotting=plotting)
+        for species in all_species:
+            process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=store_coeffs,
+                                      plotting=plotting)
+    elif N_process>1:
+        print(f'Turbo mode using {N_process:.0f} in parallel')
+        with mp.Pool(processes=N_process) as pool:
+                pool.starmap(
+                    process_xsec_coefficients,
+                    ((species, harmonized_folder, coeff_folder, main_plot_folder, 
+                      store_coeffs, plotting) 
+                     for species in all_species)
+                    )
+    else:
+        print('Doh!')
+        raise ValueError("Number of processes is smaller than 1")
+
