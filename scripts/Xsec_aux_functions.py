@@ -19,7 +19,6 @@ from matplotlib.font_manager import FontProperties
 from scipy.interpolate import interp1d
 from scipy.linalg import lstsq
 
-
 # %% constants
 
 # speed of light
@@ -225,10 +224,8 @@ def calculate_xsec(T, P, coeffs):
     coeffs[3,:]           p20
     '''
 
-
-
-    #distinguish if we calculate xsec for a lot of frequencies
-    if len(np.shape(coeffs))>1:
+    # distinguish if we calculate xsec for a lot of frequencies
+    if len(np.shape(coeffs)) > 1:
         poly = np.zeros(4)
         poly[0] = 1
         poly[1] = T
@@ -241,20 +238,19 @@ def calculate_xsec(T, P, coeffs):
         for i in range(4):
             Xsec[i, :] = coeffs[i, :] * poly[i]
 
-    #or for a lot of states
+    # or for a lot of states
     else:
-        poly = np.zeros((4,len(T)))
-        poly[0,:] = 1.
-        poly[1,:] = T
-        poly[2,:] = P
-        poly[3,:] = T ** 2
+        poly = np.zeros((4, len(T)))
+        poly[0, :] = 1.
+        poly[1, :] = T
+        poly[2, :] = P
+        poly[3, :] = T ** 2
 
         # allocate
-        Xsec = np.zeros( (len(coeffs),len(T)) )
+        Xsec = np.zeros((len(coeffs), len(T)))
 
         for i in range(4):
-            Xsec[i, :] = coeffs[i] * poly[i,:]
-
+            Xsec[i, :] = coeffs[i] * poly[i, :]
 
     Xsec = np.sum(Xsec, axis=0)
 
@@ -296,24 +292,23 @@ def calculate_xsec_fullmodel(T, P, coeffs):
     # calculate raw xsecs
     xsec = calculate_xsec(T, P, coeffs)
 
-    #Check for negative values and remove them without introducing bias, meaning
-    #the integral over the spectrum must not change.
+    # Check for negative values and remove them without introducing bias, meaning
+    # the integral over the spectrum must not change.
     logic = xsec < 0
     if np.sum(logic) > 0:
 
-        #original sum over spectrum
-        sumX_org=np.sum(xsec)
+        # original sum over spectrum
+        sumX_org = np.sum(xsec)
 
-        #remove negative values
-        xsec[logic]=0
+        # remove negative values
+        xsec[logic] = 0
 
-        if sumX_org>=0:
+        if sumX_org >= 0:
+            # estimate ratio between altered and original sum of spectrum
+            w = sumX_org / np.sum(xsec)
 
-            #estimate ratio between altered and original sum of spectrum
-            w=sumX_org/np.sum(xsec)
-
-            #scale altered spectrum
-            xsec=xsec*w
+            # scale altered spectrum
+            xsec = xsec * w
 
     return xsec
 
@@ -357,14 +352,14 @@ def xsec_derivative(T, P, coeffs):
     p01 = coeffs[2, :]
     p20 = coeffs[3, :]
 
-    DxsecDT = p10 + 2*p20*T
+    DxsecDT = p10 + 2 * p20 * T
 
     DxsecDp = p01
 
     return DxsecDT, DxsecDp
 
 
-def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_outlier=1.5):
+def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40., cnt_limit=2, k_outlier=1.5):
     '''
     FUnction to calculate the fit of the xsec at an arbitrary frequency
 
@@ -428,12 +423,12 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_ou
         Delta_P = max(yData) - min(yData)
         Delta_T = max(xData) - min(xData)
 
-        cnt=0
-        while cnt<cnt_limit:
+        cnt = 0
+        while cnt < cnt_limit:
 
             # quadratic fit in temperature and linear in pressure
-            if (Delta_P >= min_deltaP and Delta_T > 2*min_deltaT and Ndata > 5
-                and N_Tunique > 4 and N_Punique > 1):
+            if (Delta_P >= min_deltaP and Delta_T > 2 * min_deltaT and Ndata > 5
+                    and N_Tunique > 4 and N_Punique > 1):
 
                 p, res, rnk, s = fit_poly21(xData, yData, zData)
 
@@ -445,7 +440,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_ou
 
             # linear fit in temperature and pressure
             elif (Delta_P >= min_deltaP and Delta_T > min_deltaT and Ndata > 3
-                and N_Tunique > 1 and N_Punique > 1):
+                  and N_Tunique > 1 and N_Punique > 1):
 
                 p, res, rnk, s = fit_poly11(xData, yData, zData)
 
@@ -455,7 +450,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_ou
                 coeffs[2] = p[2]
 
             # quadratic fit in temperature
-            elif Delta_T > 2*min_deltaT and N_Tunique > 4 and N_Punique == 1:
+            elif Delta_T > 2 * min_deltaT and N_Tunique > 4 and N_Punique == 1:
 
                 p, res, rnk, s = fit_poly2(xData, zData)
 
@@ -490,26 +485,25 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.,cnt_limit=2, k_ou
                 rnk = np.nan
                 s = np.nan
 
+            if k_outlier > 0 or np.sum(coeffs == 0) >= 4:
+                # Calculate residuals
+                zData_fit = calculate_xsec(xData, yData, coeffs)
 
-            if k_outlier>0 or np.sum(coeffs==0)>=4:
-                #Calculate residuals
-                zData_fit=calculate_xsec(xData, yData, coeffs)
+                residuals = zData_fit - zData
 
-                residuals=zData_fit-zData
+                # Check for outlier
+                logic_out = np.logical_and(abs(residuals) > np.std(zData) * k_outlier, np.std(zData) > 0.)
 
-                #Check for outlier
-                logic_out=np.logical_and(abs(residuals)>np.std(zData)*k_outlier, np.std(zData)>0.)
+                if np.sum(logic_out) > 0:
+                    cnt += 1
 
-                if np.sum(logic_out)>0:
-                    cnt+=1
-
-                    if cnt<cnt_limit:
-                        xData=xData[~logic_out]
-                        yData=yData[~logic_out]
-                        zData=zData[~logic_out]
+                    if cnt < cnt_limit:
+                        xData = xData[~logic_out]
+                        yData = yData[~logic_out]
+                        zData = zData[~logic_out]
                         Ndata = np.sum(~logic_out)
                 else:
-                    cnt=cnt_limit
+                    cnt = cnt_limit
 
         MinP = min(yData)
         MaxP = max(yData)
@@ -658,6 +652,7 @@ def find_nearest(a, a0):
     idx = np.abs(a - a0).argmin()
     return a.flat[idx], idx
 
+
 def getOverlap(a, b):
     '''
     Function to calculate the overlap between two ranges given
@@ -693,65 +688,60 @@ def suggest_banddefinition(wvn_intervalls, dws):
 
     '''
 
+    number_of_sets = len(dws)
 
-    number_of_sets=len(dws)
+    # sort the interval edges
+    sorted_limits = np.sort(wvn_intervalls.flatten())
 
-    #sort the interval edges
-    sorted_limits=np.sort(wvn_intervalls.flatten())
+    band_limits = []
+    band_dw = []
 
-    band_limits=[]
-    band_dw=[]
+    # set the band limits according to the sorted limits, but only if there is
+    # overlap with the data
 
-    #set the band limits according to the sorted limits, but only if there is
-    #overlap with the data
+    for i in range(np.size(sorted_limits) - 1):
 
-    for i in range(np.size(sorted_limits)-1):
+        # temporary band limit
+        band_limit_i = [sorted_limits[i], sorted_limits[i + 1]]
 
-        #temporary band limit
-        band_limit_i=[sorted_limits[i],sorted_limits[i+1]]
-
-        #Check overlap with data
-        ol_i=np.zeros(number_of_sets)
+        # Check overlap with data
+        ol_i = np.zeros(number_of_sets)
 
         for j in range(number_of_sets):
+            ol_i[j] = getOverlap(wvn_intervalls[j, :], band_limit_i)
 
-            ol_i[j]=getOverlap(wvn_intervalls[j, :] ,band_limit_i)
+        if np.sum(ol_i) > 0:
+            # get minimum dw per band (highest resolution)
+            dw_i = np.min([dws[j] for j in range(number_of_sets) if ol_i[j] > 0])
 
-        if np.sum(ol_i)>0:
-            #get minimum dw per band (highest resolution)
-            dw_i = np.min([dws[j] for j in range(number_of_sets) if ol_i[j]>0])
-
-            #Check for too small bands. A band needs at least 2 points.
-            #This means dw_i must <= band_end-band_start
+            # Check for too small bands. A band needs at least 2 points.
+            # This means dw_i must <= band_end-band_start
             if dw_i <= band_limit_i[1] - band_limit_i[0]:
-
                 band_limits.append(band_limit_i)
                 band_dw.append(dw_i)
 
+    # now check if two adjacent bands have the same wavenumber resolution. If
+    # two adjacent band have the same resoltion, we can join them.
+    band_limits_final = []
+    marker = np.zeros(len(band_limits))
 
-    #now check if two adjacent bands have the same wavenumber resolution. If
-    #two adjacent band have the same resoltion, we can join them.
-    band_limits_final=[]
-    marker=np.zeros(len(band_limits))
+    cnt = 0
+    for i in range(len(band_limits) - 1):
 
-    cnt=0
-    for i in range(len(band_limits)-1):
+        adjacent = (band_limits[i][1] - band_limits[i + 1][0] == 0.)
+        same_dw = (band_dw[i] == band_dw[i + 1])
 
-        adjacent = (band_limits[i][1]-band_limits[i+1][0] == 0.)
-        same_dw = (band_dw[i] == band_dw[i+1])
-
-        crit= adjacent and same_dw
+        crit = adjacent and same_dw
 
         if not crit:
-            cnt+=1
+            cnt += 1
 
-        marker[i+1]=cnt
+        marker[i + 1] = cnt
 
-    for i in range(cnt+1):
+    for i in range(cnt + 1):
+        temp = [band_limits[j] for j in range(len(band_limits)) if marker[j] == i]
 
-        temp=[band_limits[j] for j in range(len(band_limits)) if marker[j] == i ]
-
-        band_limits_final.append([np.min(temp),np.max(temp)])
+        band_limits_final.append([np.min(temp), np.max(temp)])
 
     return band_limits_final
 
@@ -870,7 +860,7 @@ def default_plot_format(ax, font_name=None):
 
 
 def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
-              plot_title=None, legend=False, font_name=None, labels=['obs','fit'],
+              plot_title=None, legend=False, font_name=None, labels=['obs', 'fit'],
               linewidth=0.25, fontsize=10, formatter=True):
     '''
     Wrapper to plot up to two cross sections in a plot. If only one cross section
@@ -912,15 +902,14 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
 
     '''
     if formatter:
-        ax, font = default_plot_format(ax, font_name)        
+        ax, font = default_plot_format(ax, font_name)
     else:
         font = FontProperties()
         if font_name is not None:
             font.set_name(font_name)
-            
-    if np.size(linewidth)==1:
-        linewidth=np.ones(2)*linewidth
 
+    if np.size(linewidth) == 1:
+        linewidth = np.ones(2) * linewidth
 
     ax.plot(wvn, Xsec, label=labels[0], linewidth=linewidth[0])
 
