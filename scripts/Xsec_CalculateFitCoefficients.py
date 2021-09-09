@@ -85,7 +85,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
         # allocate
         fit_goodness = [[]] * len(wvn)
-        fit_coeffs = np.zeros((5, len(wvn)))
+        fit_coeffs = np.zeros((4, len(wvn)))
         N_data = np.zeros(len(wvn))
         MinP = np.zeros(len(wvn)) * np.nan
         MaxP = np.zeros(len(wvn)) * np.nan
@@ -374,7 +374,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
             print('Plotting fig3')
 
-            fig3, axs3 = xaf.default_figure(5, 1, sharey='none', sharex='all',
+            fig3, axs3 = xaf.default_figure(np.size(fit_coeffs, axis=0), 1, sharey='none', sharex='all',
                                             width_in_cm=20.9, height_in_cm=29.7)
 
             coeff_names = fit_result['coeff_names']
