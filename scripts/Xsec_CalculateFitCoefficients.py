@@ -7,11 +7,11 @@ Created on Fri Sep 11 12:53:05 2020
 
 This script calculates the absorption cross section fit coefficients from the harmonized
 Hitran absorption cross sections and stores the output for each species as ARTS-XsecRecord.
-If desired, the script produces 9 figures per species and band as overview of the fitting
+If desired, the script produces 10 figures per species and band as overview of the fitting
 process.
 
 Usage:
-Set the options at the end of this file and run the script.
+Set the options at the end of this file and run the script with the desired command-line options.
 
 """
 
@@ -33,6 +33,25 @@ import Xsec_aux_functions as xaf
 
 def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=True,
                               plotting=True):
+    '''
+    Function to calculate the fitting coefficients of a given species
+
+    Args:
+        species: str
+            Name of species
+        harmonized_folder: str
+            Folder of the harmonized data.
+        coeff_folder: str
+            Folder where to store the fit coefficients
+        main_plot_folder: str
+            Plotting folder
+        store_coeffs: boolean
+            Boolean flag. It indicates if the coefficients are stored. Default is True.
+        plotting:
+            Boolean flag. It indicates if the diagnostigs plots are made. Default is True.
+
+
+    '''
     # get the files
     filelist = glob.glob(harmonized_folder + species + '.*.json.gz')
     filelist.sort()
@@ -815,7 +834,7 @@ if __name__ == '__main__':
 
     # all_species=[all_species[31]]
     if N_process == 1:
-
+        print(f'Slow mode using {N_process:.0f}')
         for species in all_species:
             process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder,
                                       store_coeffs=store_coeffs,
