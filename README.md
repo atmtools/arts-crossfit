@@ -39,9 +39,11 @@ ARTS HITRAN cross section absorption model
 
 4. Generate model coefficients
    ```
-   scripts/Xsec_CalculateFitCoefficients.py -p
+   scripts/Xsec_CalculateFitCoefficients.py -f
    ```
 
-   The `-p` option generates optional diagnostic plots in `plots/SPECIES/`.
+   The `-f` option generates optional diagnostic figures in `plots/SPECIES/`.
+
+   Use `-p X` to speed up the calculation by using X cores in parallel.
 
    The XML data files are stored in `coefficients/`.
