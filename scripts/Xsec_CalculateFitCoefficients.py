@@ -146,7 +146,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         s_data_temp = pyarts.classes.GriddedField2()
         s_data_temp.gridnames = ['frequency grid [Hz]', 'fit coefficients [m]']
         s_data_temp.grids = [pyarts.classes.Vector(freq),
-                             pyarts.classes.ArrayOfString(['p00', 'p10', 'p01', 'p20', 'p02'])]
+                             pyarts.classes.ArrayOfString(['p00', 'p10', 'p01', 'p20'])]
         s_data_temp.data = fit_coeffs.transpose()
         s_data_temp.name = (species + '-band_' + str(band_no))
 
