@@ -331,58 +331,58 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                                             width_in_cm=29.7, height_in_cm=29.7)
 
             z11 = RMSE
-            fig2, axs2[0, 0] = xaf.scatter_plot(T, P, z11, fig2, axs2[0, 0],  # clim=[0, 40],
+            fig2, axs2[0, 0], _ = xaf.scatter_plot(T, P, z11, fig2, axs2[0, 0],  # clim=[0, 40],
                                                 plot_title='$RMSE$',
                                                 cbar_label='[cm$^2$]')
             axs2[0, 0].invert_yaxis()
 
             z12 = bias
             max_abs_bias = np.max(np.abs(bias))
-            fig2, axs2[0, 1] = xaf.scatter_plot(T, P, z12, fig2, axs2[0, 1], clim=[-max_abs_bias, max_abs_bias],
+            fig2, axs2[0, 1], _ = xaf.scatter_plot(T, P, z12, fig2, axs2[0, 1], clim=[-max_abs_bias, max_abs_bias],
                                                 plot_title='$bias$',
                                                 cbar_label='[cm$^2$]',
                                                 cmap='difference')
 
             z13 = StDev * 1e4
-            fig2, axs2[0, 2] = xaf.scatter_plot(T, P, z13, fig2, axs2[0, 2],
+            fig2, axs2[0, 2], _ = xaf.scatter_plot(T, P, z13, fig2, axs2[0, 2],
                                                 plot_title='std($a_{xsec,obs}$)',
                                                 cbar_label='[cm$^2$]')
 
             z21 = XsecInt
             z21_max = np.max([XsecInt.max(), XsecIntFitFull.max()])
             z21_min = np.min([XsecInt.min(), XsecIntFitFull.min()])
-            fig2, axs2[1, 0] = xaf.scatter_plot(T, P, z21, fig2, axs2[1, 0], clim=[z21_min, z21_max],
+            fig2, axs2[1, 0], _ = xaf.scatter_plot(T, P, z21, fig2, axs2[1, 0], clim=[z21_min, z21_max],
                                                 plot_title='$\int a_{xsec,obs,raw}$',
                                                 cbar_label='[cm$^2$ cm$^{-1}$]',
                                                 cmap='temperature')
 
             z22 = XsecIntFit
-            fig2, axs2[1, 1] = xaf.scatter_plot(T, P, z22, fig2, axs2[1, 1], clim=[z21_min, z21_max],
+            fig2, axs2[1, 1], _ = xaf.scatter_plot(T, P, z22, fig2, axs2[1, 1], clim=[z21_min, z21_max],
                                                 plot_title='$\int a_{xsec,fit}$',
                                                 cbar_label='[cm$^2$ cm$^{-1}$]',
                                                 cmap='temperature')
 
             z23 = XsecIntFitFull
-            fig2, axs2[1, 2] = xaf.scatter_plot(T, P, z23, fig2, axs2[1, 2], clim=[z21_min, z21_max],
+            fig2, axs2[1, 2], _ = xaf.scatter_plot(T, P, z23, fig2, axs2[1, 2], clim=[z21_min, z21_max],
                                                 plot_title='$\int a_{xsec,fit,full}$',
                                                 cbar_label='[cm$^2$ cm$^{-1}$]',
                                                 cmap='temperature')
 
             z31 = L_raw * 100
-            fig2, axs2[2, 0] = xaf.scatter_plot(T, P, z31, fig2, axs2[2, 0],
+            fig2, axs2[2, 0], _ = xaf.scatter_plot(T, P, z31, fig2, axs2[2, 0],
                                                 clim=[0, 100],
                                                 plot_title='Overlap between Hitran and band',
                                                 cbar_label='[$\\%$]')
 
             z32 = (XsecIntFit / XsecInt - 1) * 100
             z32_limit = np.max([abs(z32.min()), abs(z32.max())])
-            fig2, axs2[2, 1] = xaf.scatter_plot(T, P, z32, fig2, axs2[2, 1], clim=[-z32_limit, z32_limit],
+            fig2, axs2[2, 1], _ = xaf.scatter_plot(T, P, z32, fig2, axs2[2, 1], clim=[-z32_limit, z32_limit],
                                                 plot_title='$(\int a_{xsec,fit}/\int a_{xsec,obs,raw})-1$',
                                                 cbar_label='[$\\%$]', cmap='difference')
 
             z33 = dw_raw
             z33_limit = z33.max()
-            fig2, axs2[2, 2] = xaf.scatter_plot(T, P, z33, fig2, axs2[2, 2], clim=[0, z33_limit],
+            fig2, axs2[2, 2], _ = xaf.scatter_plot(T, P, z33, fig2, axs2[2, 2], clim=[0, z33_limit],
                                                 plot_title='wavenumber resolution (Hitran)',
                                                 cbar_label='[$cm^{-1}$]')
 

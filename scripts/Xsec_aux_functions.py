@@ -936,8 +936,8 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
 
 
 def scatter_plot(T, P, data, fig, ax, clim=None, xlabel='Temperature [K]',
-                 ylabel='Pressure [hPa]', plot_title='', cbar_label='',
-                 font_name=None, cmap='speed'):
+                 ylabel='Pressure [hPa]', plot_title='', cbar_label='', alpha=None,
+                 font_name=None, cmap='speed',MarkerSize=50):
     '''
 
     Args:
@@ -961,10 +961,14 @@ def scatter_plot(T, P, data, fig, ax, clim=None, xlabel='Temperature [K]',
             plot title
         cbar_label: str
             label of colorbar
+        alpha: float    
+            The alpha blending value, between 0 (transparent) and 1 (opaque).
         font_name: str
              font name
         cmap: str
             name of colormap
+        MarkerSize: float
+            The marker size in squared points             
 
     Returns:
         fig: matplotlib figure object
@@ -979,18 +983,20 @@ def scatter_plot(T, P, data, fig, ax, clim=None, xlabel='Temperature [K]',
     if clim == None:
         clim = [None, None]
 
-    MarkerSize = 50
-    sca = ax.scatter(T, P / 100, MarkerSize, data, cmap=cmap, vmin=clim[0], vmax=clim[1])
+    
+    sca = ax.scatter(T, P / 100, MarkerSize, data, cmap=cmap, vmin=clim[0], vmax=clim[1],
+                     alpha=alpha)
     # ax.set_yscale('log')
 
-    cbar = fig.colorbar(sca, ax=ax, shrink=1)
-    cbar.set_label(cbar_label, fontproperties=font)
+    if len(cbar_label)>0:
+        cbar = fig.colorbar(sca, ax=ax, shrink=1)
+        cbar.set_label(cbar_label, fontproperties=font)
 
     ax.set_xlabel(xlabel, fontproperties=font)
     ax.set_ylabel(ylabel, fontproperties=font)
     ax.set_title(plot_title, fontproperties=font)
 
-    return fig, ax
+    return fig, ax, sca
 
 
 def pcolor_plot(x, y, Z, fig, ax, minZ, maxZ, font_name=None, xlabel=None, ylabel=None,
