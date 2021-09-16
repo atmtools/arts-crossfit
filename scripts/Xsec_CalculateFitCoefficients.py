@@ -23,8 +23,12 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from gzip import GzipFile
 
 import numpy as np
-import pyarts
-from typhon import constants
+
+try:
+    import pyarts
+    use_pyarts = True
+except ImportError:
+    use_pyarts = False 
 
 import Xsec_aux_functions as xaf
 
@@ -141,20 +145,26 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         # %% prepare output
 
         # frequency in Hz
-        freq = wvn * constants.c * 100
+        freq = wvn * xaf.c0 * 100
 
-        s_data_temp = pyarts.classes.GriddedField2()
-        s_data_temp.gridnames = ['frequency grid [Hz]', 'fit coefficients [m]']
-        s_data_temp.grids = [pyarts.classes.Vector(freq),
-                             pyarts.classes.ArrayOfString(['p00', 'p10', 'p01', 'p20'])]
-        s_data_temp.data = fit_coeffs.transpose()
-        s_data_temp.name = (species + '-band_' + str(band_no))
+        # s_data_temp = pyarts.classes.GriddedField2()
+        # s_data_temp.gridnames = ['frequency grid [Hz]', 'fit coefficients [m]']
+        # s_data_temp.grids = [pyarts.classes.Vector(freq),
+        #                      pyarts.classes.ArrayOfString(['p00', 'p10', 'p01', 'p20'])]
+        # s_data_temp.data = fit_coeffs.transpose()
+        # s_data_temp.name = (species + '-band_' + str(band_no))
+        s_data_temp={}
+        s_data_temp['gridnames'] = ['frequency grid [Hz]', 'fit coefficients [m]']
+        s_data_temp['grids'] = [freq, ['p00', 'p10', 'p01', 'p20']]
+        s_data_temp['data'] = fit_coeffs.transpose()
 
         Xsec_processed_data_array[f_i] = s_data_temp
         min_pressures[f_i] = np.min(MinP)
         max_pressures[f_i] = np.max(MaxP)
         min_temperatures[f_i] = np.min(MinT)
         max_temperatures[f_i] = np.max(MaxT)
+        
+
 
         # %% same validation
 
@@ -749,26 +759,38 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
             xaf.plt.close('all')
 
-    # %%
+    # %% Store the data
 
     if store_coeffs == True:
-        xsec_record = pyarts.classes.XsecRecord()
-        xsec_record.spec = species_arts
-        xsec_record.fitminpressures = min_pressures
-        xsec_record.fitmaxpressures = max_pressures
-        xsec_record.fitmintemperatures = min_temperatures
-        xsec_record.fitmaxtemperatures = max_temperatures
-        xsec_record.fitcoeffs = Xsec_processed_data_array
-        xsec_record.version = 2
 
-        fid = '.xml'
+        # file identifier
+        fid = '.nc'
 
         if not os.path.exists(coeff_folder):
             os.makedirs(coeff_folder)
 
         coeff_file_name = os.path.join(coeff_folder, species_arts + fid)
 
-        pyarts.xml.save(xsec_record, coeff_file_name, precision='.14e', format='binary')
+        # pyarts.xml.save(xsec_record, coeff_file_name, precision='.14e', format='binary')
+
+        fitdata = xaf.store_fit_in_xarray(species_arts, Xsec_processed_data_array, min_temperatures,
+                                          max_temperatures, min_pressures, max_pressures)
+
+        fitdata.to_netcdf(coeff_file_name)
+
+        if use_pyarts:
+            fid_arts = '.xml'
+            coeff_folder_arts = coeff_folder[0:-1]+'_arts'
+
+            if not os.path.exists(coeff_folder_arts):
+                os.makedirs(coeff_folder_arts)
+
+            coeff_file_name_arts = os.path.join(
+                coeff_folder_arts, species_arts + fid_arts)
+
+            fitdata_pyarts = pyarts.classes.XsecRecord.from_xarray(fitdata)
+            pyarts.xml.save(fitdata_pyarts, coeff_file_name_arts,
+                            precision='.14e', format='binary')
 
         print('Saving coefficients')
 

@@ -14,7 +14,9 @@ from os import path
 import matplotlib.patches as ptch
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray
 import pyarts
+from datetime import datetime
 from matplotlib.font_manager import FontProperties
 from scipy.interpolate import interp1d
 from scipy.linalg import lstsq
@@ -540,6 +542,56 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40., cnt_limit=2, k_o
         fit_result['NumberOfPoints'] = 0
 
     return fit_result
+
+
+def store_fit_in_xarray(species, xsecfitdata, fitmintemperatures, fiaxintemperatures, fitminpressures, fitmaxpressures,version=2):
+        """Store fitdata to xarray dataset"""
+        attrs = {'creation_date': str(datetime.now())}
+        coords = {
+            "coeffs": ("coeffs", range(4), {
+                "unit": "1",
+                "long_name": "Coefficients p00, p10, p01, p20"
+            }),
+            "bands": ("bands", range(len(xsecfitdata)), {
+                "unit": "1",
+                "long_name": "Band indices"
+            })
+        }
+
+        data_vars = {}
+        data_vars["fitminpressures"] = ("bands", fitminpressures, {
+            "unit": "Pa",
+            "long_name": "Mininum pressures from fit"
+        })
+        data_vars["fitmaxpressures"] = ("bands", fitmaxpressures, {
+            "unit": "Pa",
+            "long_name": "Maximum pressures from fit"
+        })
+        data_vars["fitmintemperatures"] = ("bands", fitmintemperatures, {
+            "unit": "K",
+            "long_name": "Minimum temperatures from fit"
+        })
+        data_vars["fitmaxtemperatures"] = ("bands", fiaxintemperatures, {
+            "unit": "K",
+            "long_name": "Maximum temperatures from fit"
+        })
+
+        for i, band in enumerate(xsecfitdata):
+            coords[f"band{i}_fgrid"] = (f"band{i}_fgrid", band['grids'][0], {
+                "unit": "Hz",
+                "long_name": f"Frequency grid for band {i}"
+            })
+            data_vars[f"band{i}_coeffs"] = ([f"band{i}_fgrid", "coeffs"], band['data'], {
+                'unit':
+                "m",
+                'long_name':
+                f'Fit coefficients for band {i}'
+            })
+
+        attrs["species"] = str(species)
+        attrs["version"] = version
+
+        return xarray.Dataset(data_vars, coords, attrs)    
 
 
 # %% Apllication functions
