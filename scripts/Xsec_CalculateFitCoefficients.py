@@ -28,14 +28,18 @@ try:
     import pyarts
     use_pyarts = True
 except ImportError:
-    use_pyarts = False 
+    use_pyarts = False
 
 import Xsec_aux_functions as xaf
 
-
 # %%
 
-def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder, store_coeffs=True,
+
+def process_xsec_coefficients(species,
+                              harmonized_folder,
+                              coeff_folder,
+                              main_plot_folder,
+                              store_coeffs=True,
                               plotting=True):
     '''
     Function to calculate the fitting coefficients of a given species
@@ -69,7 +73,9 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         print(dummy)
 
     print('')
-    print('----------------------------------------------------------------------')
+    print(
+        '----------------------------------------------------------------------'
+    )
     print('now go through the data')
     print('')
 
@@ -94,7 +100,9 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         species_arts = species_arts.join(dump)
 
         print('   ')
-        print('------------------------------------------------------------------')
+        print(
+            '------------------------------------------------------------------'
+        )
         print('Species: ' + species)
         print('Band #' + str(band_no))
         print('file: ' + filename)
@@ -103,7 +111,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         with GzipFile(filename) as f:
             data = json.loads(f.read().decode("utf-8"))
 
-        wvn = np.linspace(data[0]['wmin'], data[0]['wmax'], len(data[0]['xsec']))
+        wvn = np.linspace(data[0]['wmin'], data[0]['wmax'],
+                          len(data[0]['xsec']))
 
         # allocate
         fit_goodness = [[]] * len(wvn)
@@ -132,7 +141,11 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             for i in range(len(data)):
                 Xsec[i] = data[i]['xsec'][idx]
 
-            fit_result = xaf.fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40.)
+            fit_result = xaf.fit_xsec_data(T,
+                                           P,
+                                           Xsec,
+                                           min_deltaP=80000,
+                                           min_deltaT=40.)
 
             fit_coeffs[:, idx] = fit_result['coefficients']
             N_data[idx] = fit_result['NumberOfPoints']
@@ -153,8 +166,10 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         #                      pyarts.classes.ArrayOfString(['p00', 'p10', 'p01', 'p20'])]
         # s_data_temp.data = fit_coeffs.transpose()
         # s_data_temp.name = (species + '-band_' + str(band_no))
-        s_data_temp={}
-        s_data_temp['gridnames'] = ['frequency grid [Hz]', 'fit coefficients [m]']
+        s_data_temp = {}
+        s_data_temp['gridnames'] = [
+            'frequency grid [Hz]', 'fit coefficients [m]'
+        ]
         s_data_temp['grids'] = [freq, ['p00', 'p10', 'p01', 'p20']]
         s_data_temp['data'] = fit_coeffs.transpose()
 
@@ -163,8 +178,6 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         max_pressures[f_i] = np.max(MaxP)
         min_temperatures[f_i] = np.min(MinT)
         max_temperatures[f_i] = np.max(MaxT)
-        
-
 
         # %% same validation
 
@@ -182,14 +195,17 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             XsecIntFit = np.zeros(np.shape(T)) * np.nan
             XsecIntFitFull = np.zeros(np.shape(T)) * np.nan
             R2 = np.zeros(np.size(fit_coeffs, axis=1))
-            XsecTest = np.zeros((np.size(T), np.size(fit_coeffs, axis=1))) * np.nan
-            XsecTestFit = np.zeros((np.size(T), np.size(fit_coeffs, axis=1))) * np.nan
+            XsecTest = np.zeros(
+                (np.size(T), np.size(fit_coeffs, axis=1))) * np.nan
+            XsecTestFit = np.zeros(
+                (np.size(T), np.size(fit_coeffs, axis=1))) * np.nan
             L_raw = np.zeros(np.shape(T)) * np.nan
             dw_raw = np.zeros(np.shape(T)) * np.nan
 
             for i in range(len(RMSE)):
                 # fitted spectrum
-                XsecTestFit[i, :] = xaf.calculate_xsec_fullmodel(T[i], P[i], fit_coeffs)
+                XsecTestFit[i, :] = xaf.calculate_xsec_fullmodel(
+                    T[i], P[i], fit_coeffs)
 
                 # observed
                 XsecTest[i, :] = data[i]['xsec']
@@ -198,8 +214,10 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 logic_i = np.isnan(XsecTest[i, :])
                 temp = XsecTestFit[i, :] * 1
                 temp[logic_i] = 0.
-                XsecIntFit[i] = np.trapz(temp, wvn) * 1e4  # Integrate, only where data exists
-                XsecIntFitFull[i] = np.trapz(XsecTestFit[i, :], wvn) * 1e4  # Integrate full spectrum
+                XsecIntFit[i] = np.trapz(
+                    temp, wvn) * 1e4  # Integrate, only where data exists
+                XsecIntFitFull[i] = np.trapz(
+                    XsecTestFit[i, :], wvn) * 1e4  # Integrate full spectrum
 
                 # Integrated Xsec from rawdata in cm^2/cm
                 XsecInt[i] = data[i]['IntXsec_cm2_per_cm']
@@ -208,7 +226,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 DeltaXsecInt[i] = data[i]['DeltaIntXsec_relative']
 
                 # bandwidth of the hitran spectrum
-                L_raw[i] = (data[i]['wmax_rawdata'] - data[i]['wmin_rawdata']) / (wvn.max() - wvn.min())
+                L_raw[i] = (data[i]['wmax_rawdata'] -
+                            data[i]['wmin_rawdata']) / (wvn.max() - wvn.min())
 
                 # wavenumber resolution of original hitran spectrum
                 dw_raw[i] = data[i]['DeltaWvnOfRawdata']
@@ -218,7 +237,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 N_not_nan = np.sum(~logic_delta)
                 deltaXsec[logic_delta] = 0.
                 dw = np.nanmean(np.diff(wvn))
-                RMSE[i] = np.sqrt(np.trapz(deltaXsec ** 2, wvn) / dw / N_not_nan) * 1e4
+                RMSE[i] = np.sqrt(
+                    np.trapz(deltaXsec**2, wvn) / dw / N_not_nan) * 1e4
                 bias[i] = np.trapz(deltaXsec, wvn) / dw / N_not_nan * 1e4
                 StDev[i] = np.nanstd(XsecTest[i, :])
                 XsecMean[i] = np.nanmean(XsecTest[i, :])
@@ -228,7 +248,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
             # Calculate Goodnes of fit
             for i in range(np.size(fit_coeffs, axis=1)):
-                R2[i] = xaf.calc_Rsquare(XsecTest[:, i], XsecTestFit[:, i], np.sum(fit_coeffs[:, i] > 0))
+                R2[i] = xaf.calc_Rsquare(XsecTest[:, i], XsecTestFit[:, i],
+                                         np.sum(fit_coeffs[:, i] > 0))
 
             # %% some preparation for  plotting
 
@@ -239,7 +260,7 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             idx = np.argsort(T)
 
             # number of plots
-            nop = 9;
+            nop = 9
             if len(P) < nop:
                 index = idx
             else:
@@ -290,8 +311,15 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 else:
                     legend = False
 
-                axs0[row, col] = xaf.plot_xsec(wvn, xsec, xsec_fit, ax, xlim=None, xlabel=xlabel, ylabel=ylabel,
-                                               plot_title=plot_title, legend=legend)
+                axs0[row, col] = xaf.plot_xsec(wvn,
+                                               xsec,
+                                               xsec_fit,
+                                               ax,
+                                               xlim=None,
+                                               xlabel=xlabel,
+                                               ylabel=ylabel,
+                                               plot_title=plot_title,
+                                               legend=legend)
 
             # %% plot differences for some points
 
@@ -330,78 +358,143 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 else:
                     xlabel = None
 
-                axs1[row, col] = xaf.plot_xsec(wvn, dxsec, [], ax, xlim=None, xlabel=xlabel, ylabel=ylabel,
+                axs1[row, col] = xaf.plot_xsec(wvn,
+                                               dxsec, [],
+                                               ax,
+                                               xlim=None,
+                                               xlabel=xlabel,
+                                               ylabel=ylabel,
                                                plot_title=plot_title)
 
             # %% plot overview
 
             print('Plotting fig2')
 
-            fig2, axs2 = xaf.default_figure(3, 3, sharey='all', sharex='all',
-                                            width_in_cm=29.7, height_in_cm=29.7)
+            fig2, axs2 = xaf.default_figure(3,
+                                            3,
+                                            sharey='all',
+                                            sharex='all',
+                                            width_in_cm=29.7,
+                                            height_in_cm=29.7)
 
             z11 = RMSE
-            fig2, axs2[0, 0], _ = xaf.scatter_plot(T, P, z11, fig2, axs2[0, 0],  # clim=[0, 40],
-                                                plot_title='$RMSE$',
-                                                cbar_label='[cm$^2$]')
+            fig2, axs2[0, 0], _ = xaf.scatter_plot(
+                T,
+                P,
+                z11,
+                fig2,
+                axs2[0, 0],  # clim=[0, 40],
+                plot_title='$RMSE$',
+                cbar_label='[cm$^2$]')
             axs2[0, 0].invert_yaxis()
 
             z12 = bias
             max_abs_bias = np.max(np.abs(bias))
-            fig2, axs2[0, 1], _ = xaf.scatter_plot(T, P, z12, fig2, axs2[0, 1], clim=[-max_abs_bias, max_abs_bias],
-                                                plot_title='$bias$',
-                                                cbar_label='[cm$^2$]',
-                                                cmap='difference')
+            fig2, axs2[0, 1], _ = xaf.scatter_plot(
+                T,
+                P,
+                z12,
+                fig2,
+                axs2[0, 1],
+                clim=[-max_abs_bias, max_abs_bias],
+                plot_title='$bias$',
+                cbar_label='[cm$^2$]',
+                cmap='difference')
 
             z13 = StDev * 1e4
-            fig2, axs2[0, 2], _ = xaf.scatter_plot(T, P, z13, fig2, axs2[0, 2],
-                                                plot_title='std($a_{xsec,obs}$)',
-                                                cbar_label='[cm$^2$]')
+            fig2, axs2[0, 2], _ = xaf.scatter_plot(
+                T,
+                P,
+                z13,
+                fig2,
+                axs2[0, 2],
+                plot_title='std($a_{xsec,obs}$)',
+                cbar_label='[cm$^2$]')
 
             z21 = XsecInt
             z21_max = np.max([XsecInt.max(), XsecIntFitFull.max()])
             z21_min = np.min([XsecInt.min(), XsecIntFitFull.min()])
-            fig2, axs2[1, 0], _ = xaf.scatter_plot(T, P, z21, fig2, axs2[1, 0], clim=[z21_min, z21_max],
-                                                plot_title='$\int a_{xsec,obs,raw}$',
-                                                cbar_label='[cm$^2$ cm$^{-1}$]',
-                                                cmap='temperature')
+            fig2, axs2[1, 0], _ = xaf.scatter_plot(
+                T,
+                P,
+                z21,
+                fig2,
+                axs2[1, 0],
+                clim=[z21_min, z21_max],
+                plot_title='$\int a_{xsec,obs,raw}$',
+                cbar_label='[cm$^2$ cm$^{-1}$]',
+                cmap='temperature')
 
             z22 = XsecIntFit
-            fig2, axs2[1, 1], _ = xaf.scatter_plot(T, P, z22, fig2, axs2[1, 1], clim=[z21_min, z21_max],
-                                                plot_title='$\int a_{xsec,fit}$',
-                                                cbar_label='[cm$^2$ cm$^{-1}$]',
-                                                cmap='temperature')
+            fig2, axs2[1, 1], _ = xaf.scatter_plot(
+                T,
+                P,
+                z22,
+                fig2,
+                axs2[1, 1],
+                clim=[z21_min, z21_max],
+                plot_title='$\int a_{xsec,fit}$',
+                cbar_label='[cm$^2$ cm$^{-1}$]',
+                cmap='temperature')
 
             z23 = XsecIntFitFull
-            fig2, axs2[1, 2], _ = xaf.scatter_plot(T, P, z23, fig2, axs2[1, 2], clim=[z21_min, z21_max],
-                                                plot_title='$\int a_{xsec,fit,full}$',
-                                                cbar_label='[cm$^2$ cm$^{-1}$]',
-                                                cmap='temperature')
+            fig2, axs2[1, 2], _ = xaf.scatter_plot(
+                T,
+                P,
+                z23,
+                fig2,
+                axs2[1, 2],
+                clim=[z21_min, z21_max],
+                plot_title='$\int a_{xsec,fit,full}$',
+                cbar_label='[cm$^2$ cm$^{-1}$]',
+                cmap='temperature')
 
             z31 = L_raw * 100
-            fig2, axs2[2, 0], _ = xaf.scatter_plot(T, P, z31, fig2, axs2[2, 0],
-                                                clim=[0, 100],
-                                                plot_title='Overlap between Hitran and band',
-                                                cbar_label='[$\\%$]')
+            fig2, axs2[2, 0], _ = xaf.scatter_plot(
+                T,
+                P,
+                z31,
+                fig2,
+                axs2[2, 0],
+                clim=[0, 100],
+                plot_title='Overlap between Hitran and band',
+                cbar_label='[$\\%$]')
 
             z32 = (XsecIntFit / XsecInt - 1) * 100
             z32_limit = np.max([abs(z32.min()), abs(z32.max())])
-            fig2, axs2[2, 1], _ = xaf.scatter_plot(T, P, z32, fig2, axs2[2, 1], clim=[-z32_limit, z32_limit],
-                                                plot_title='$(\int a_{xsec,fit}/\int a_{xsec,obs,raw})-1$',
-                                                cbar_label='[$\\%$]', cmap='difference')
+            fig2, axs2[2, 1], _ = xaf.scatter_plot(
+                T,
+                P,
+                z32,
+                fig2,
+                axs2[2, 1],
+                clim=[-z32_limit, z32_limit],
+                plot_title='$(\int a_{xsec,fit}/\int a_{xsec,obs,raw})-1$',
+                cbar_label='[$\\%$]',
+                cmap='difference')
 
             z33 = dw_raw
             z33_limit = z33.max()
-            fig2, axs2[2, 2], _ = xaf.scatter_plot(T, P, z33, fig2, axs2[2, 2], clim=[0, z33_limit],
-                                                plot_title='wavenumber resolution (Hitran)',
-                                                cbar_label='[$cm^{-1}$]')
+            fig2, axs2[2, 2], _ = xaf.scatter_plot(
+                T,
+                P,
+                z33,
+                fig2,
+                axs2[2, 2],
+                clim=[0, z33_limit],
+                plot_title='wavenumber resolution (Hitran)',
+                cbar_label='[$cm^{-1}$]')
 
             # %% plot coefficients
 
             print('Plotting fig3')
 
-            fig3, axs3 = xaf.default_figure(np.size(fit_coeffs, axis=0), 1, sharey='none', sharex='all',
-                                            width_in_cm=20.9, height_in_cm=29.7)
+            fig3, axs3 = xaf.default_figure(np.size(fit_coeffs, axis=0),
+                                            1,
+                                            sharey='none',
+                                            sharex='all',
+                                            width_in_cm=20.9,
+                                            height_in_cm=29.7)
 
             coeff_names = fit_result['coeff_names']
             formula = fit_result['formula']
@@ -419,7 +512,12 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 else:
                     xlabel = None
 
-                axs3[i] = xaf.plot_xsec(wvn, fit_coeffs[i, :], [], ax, xlim=None, xlabel=xlabel, ylabel=ylabel,
+                axs3[i] = xaf.plot_xsec(wvn,
+                                        fit_coeffs[i, :], [],
+                                        ax,
+                                        xlim=None,
+                                        xlabel=xlabel,
+                                        ylabel=ylabel,
                                         plot_title=plot_title)
 
             sup_text = species + ': $a_{xsec}=' + formula + '$; $x=T/T_0$, $y=p/p_0$'
@@ -433,8 +531,10 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             T_i = [np.min(MinT) * 0.9, np.max(MaxT) / 0.9]
             P_i = [10., np.min(MinP), np.max(MaxP)]
 
-            fig4, axs4 = xaf.default_figure(len(T_i) * len(P_i), 1,
-                                            width_in_cm=20.9, height_in_cm=29.7)
+            fig4, axs4 = xaf.default_figure(len(T_i) * len(P_i),
+                                            1,
+                                            width_in_cm=20.9,
+                                            height_in_cm=29.7)
             fig4.subplots_adjust(hspace=0.5)
 
             for i in range(len(T_i)):
@@ -459,7 +559,12 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                     else:
                         xlabel = None
 
-                    axs4[row] = xaf.plot_xsec(wvn, xsec_fit * 1e4, [], ax, xlim=None, xlabel=xlabel, ylabel=ylabel,
+                    axs4[row] = xaf.plot_xsec(wvn,
+                                              xsec_fit * 1e4, [],
+                                              ax,
+                                              xlim=None,
+                                              xlabel=xlabel,
+                                              ylabel=ylabel,
                                               plot_title=plot_title)
 
             # %% edge cases T-derivative
@@ -469,8 +574,11 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             T_i = [np.min(MinT), np.max(MaxT)]
             P_i = [np.max([1., np.min(MinP)]), np.max([np.max(MaxP), 101325.])]
 
-            fig41, axs41 = xaf.default_figure(len(T_i) * len(P_i), 1, width_in_cm=20.9,
-                                              height_in_cm=29.7, sharey=False)
+            fig41, axs41 = xaf.default_figure(len(T_i) * len(P_i),
+                                              1,
+                                              width_in_cm=20.9,
+                                              height_in_cm=29.7,
+                                              sharey=False)
             fig41.subplots_adjust(hspace=0.5)
 
             for i in range(len(T_i)):
@@ -488,8 +596,9 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                     DxsecDT, _ = xaf.xsec_derivative(t, p, fit_coeffs)
 
                     # check derivative
-                    DxsecDTnum = (xaf.calculate_xsec(t + deltaT, p, fit_coeffs)
-                                  - xaf.calculate_xsec(t, p, fit_coeffs)) / deltaT
+                    DxsecDTnum = (
+                        xaf.calculate_xsec(t + deltaT, p, fit_coeffs) -
+                        xaf.calculate_xsec(t, p, fit_coeffs)) / deltaT
 
                     plot_title = f"{p:.2f}$\,$Pa $-$ {t:.0f}$\,$K"
 
@@ -500,7 +609,12 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                     else:
                         xlabel = None
 
-                    axs41[row] = xaf.plot_xsec(wvn, DxsecDT, DxsecDTnum, axs41[row], xlim=None, xlabel=xlabel,
+                    axs41[row] = xaf.plot_xsec(wvn,
+                                               DxsecDT,
+                                               DxsecDTnum,
+                                               axs41[row],
+                                               xlim=None,
+                                               xlabel=xlabel,
                                                ylabel=ylabel,
                                                plot_title=plot_title)
 
@@ -508,8 +622,11 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
             print('Plotting fig4.2')
 
-            fig42, axs42 = xaf.default_figure(len(T_i) * len(P_i), 1, width_in_cm=20.9,
-                                              height_in_cm=29.7, sharey=False)
+            fig42, axs42 = xaf.default_figure(len(T_i) * len(P_i),
+                                              1,
+                                              width_in_cm=20.9,
+                                              height_in_cm=29.7,
+                                              sharey=False)
             fig42.subplots_adjust(hspace=0.5)
 
             for i in range(len(T_i)):
@@ -525,8 +642,9 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                     _, DxsecDP = xaf.xsec_derivative(t, p, fit_coeffs)
 
                     # check derivative
-                    DxsecDPnum = (xaf.calculate_xsec(t, p + deltaP, fit_coeffs)
-                                  - xaf.calculate_xsec(t, p, fit_coeffs)) / deltaP
+                    DxsecDPnum = (
+                        xaf.calculate_xsec(t, p + deltaP, fit_coeffs) -
+                        xaf.calculate_xsec(t, p, fit_coeffs)) / deltaP
 
                     plot_title = f"{p:.2f}$\,$Pa $-$ {t:.0f}$\,$K"
 
@@ -537,7 +655,12 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                     else:
                         xlabel = None
 
-                    axs42[row] = xaf.plot_xsec(wvn, DxsecDP, DxsecDPnum, axs42[row], xlim=None, xlabel=xlabel,
+                    axs42[row] = xaf.plot_xsec(wvn,
+                                               DxsecDP,
+                                               DxsecDPnum,
+                                               axs42[row],
+                                               xlim=None,
+                                               xlabel=xlabel,
                                                ylabel=ylabel,
                                                plot_title=plot_title)
 
@@ -553,8 +676,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             for i in range(len(Ptest)):
                 for j in range(len(Ttest)):
                     # %fitted spectrum
-                    xsec_fit = xaf.calculate_xsec_fullmodel(Ttest[j], Ptest[i],
-                                                            fit_coeffs)
+                    xsec_fit = xaf.calculate_xsec_fullmodel(
+                        Ttest[j], Ptest[i], fit_coeffs)
 
                     # Integral over frequency of fitted spectrum
                     Xmean[i, j] = np.trapz(xsec_fit, wvn) * 1e4
@@ -567,14 +690,29 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             cbar_label = '[cm$^2$ cm$^{-1}$]'
             title = r'$\int a_{xsec} $d$\nu$ (fit)'
 
-            fig5, axs5[0], pcm, cbar = xaf.pcolor_plot(Ttest, Ptest / 100, Xmean, fig5, axs5[0],
-                                                       np.percentile(Xmean, 1), np.percentile(Xmean, 99),
-                                                       xlabel=xlabel, ylabel=ylabel,
-                                                       cmap='temperature', title=title,
+            fig5, axs5[0], pcm, cbar = xaf.pcolor_plot(Ttest,
+                                                       Ptest / 100,
+                                                       Xmean,
+                                                       fig5,
+                                                       axs5[0],
+                                                       np.percentile(Xmean, 1),
+                                                       np.percentile(
+                                                           Xmean, 99),
+                                                       xlabel=xlabel,
+                                                       ylabel=ylabel,
+                                                       cmap='temperature',
+                                                       title=title,
                                                        cbar_label=cbar_label)
 
-            axs5[0].scatter(T, P / 100, 50, XsecInt, cmap='temperature',  # edgecolors='w',
-                            vmin=cbar.vmin, vmax=cbar.vmax, zorder=1e11)
+            axs5[0].scatter(
+                T,
+                P / 100,
+                50,
+                XsecInt,
+                cmap='temperature',  # edgecolors='w',
+                vmin=cbar.vmin,
+                vmax=cbar.vmax,
+                zorder=1e11)
 
             axs5[0].invert_yaxis()
 
@@ -586,7 +724,9 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             logic_surf = np.abs(P - 101325) <= 101325 * 0.10
             logic_100hPa = np.abs(P - 5000) <= 5000
 
-            axs5[1] = xaf.plot_xsec(Ttest, Xmean[idx_surf, :], Xmean[idx_100hPa, :],
+            axs5[1] = xaf.plot_xsec(Ttest,
+                                    Xmean[idx_surf, :],
+                                    Xmean[idx_100hPa, :],
                                     axs5[1],
                                     xlabel=xlabel,
                                     ylabel=cbar_label,
@@ -596,10 +736,18 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                                     linewidth=1.5)
 
             colors = xaf.cmap_matlab_lines()
-            axs5[1].plot(T[logic_surf], XsecInt[logic_surf], marker='o',
-                         linestyle='None', color=colors[0, :], label='Hitran,surf')
-            axs5[1].plot(T[logic_100hPa], XsecInt[logic_100hPa], marker='+',
-                         linestyle='None', color=colors[1, :], label='Hitran,50hPa$\pm$50hPa')
+            axs5[1].plot(T[logic_surf],
+                         XsecInt[logic_surf],
+                         marker='o',
+                         linestyle='None',
+                         color=colors[0, :],
+                         label='Hitran,surf')
+            axs5[1].plot(T[logic_100hPa],
+                         XsecInt[logic_100hPa],
+                         marker='+',
+                         linestyle='None',
+                         color=colors[1, :],
+                         label='Hitran,50hPa$\pm$50hPa')
 
             axs5[1].yaxis.tick_right()
             axs5[1].yaxis.set_label_position("right")
@@ -609,46 +757,80 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
 
             print('Plotting fig6')
 
-            fig6, axs6 = xaf.default_figure(6, 1, width_in_cm=20.9, height_in_cm=29.7, sharey='none')
+            fig6, axs6 = xaf.default_figure(6,
+                                            1,
+                                            width_in_cm=20.9,
+                                            height_in_cm=29.7,
+                                            sharey='none')
             fig6.subplots_adjust(hspace=0.5)
 
             # Number of points per fit
             plot_title = 'Number of points per fit'
             ylabel = '$N_{obs}$ [$\\,$]'
 
-            axs6[0] = xaf.plot_xsec(wvn, N_data, [], axs6[0], xlim=None, xlabel=None, ylabel=ylabel,
+            axs6[0] = xaf.plot_xsec(wvn,
+                                    N_data, [],
+                                    axs6[0],
+                                    xlim=None,
+                                    xlabel=None,
+                                    ylabel=ylabel,
                                     plot_title=plot_title)
 
             # minimum temperature of fit
             plot_title = 'Minimum temperature of fit'
             ylabel = '$T_{min}$ [K]'
-            axs6[1] = xaf.plot_xsec(wvn, MinT, [], axs6[1], xlim=None, xlabel=None, ylabel=ylabel,
+            axs6[1] = xaf.plot_xsec(wvn,
+                                    MinT, [],
+                                    axs6[1],
+                                    xlim=None,
+                                    xlabel=None,
+                                    ylabel=ylabel,
                                     plot_title=plot_title)
 
             # maximum temperature of fit
             plot_title = 'Maximum temperature of fit'
             ylabel = '$T_{min}$ [K]'
-            axs6[2] = xaf.plot_xsec(wvn, MaxT, [], axs6[2], xlim=None, xlabel=None, ylabel=ylabel,
+            axs6[2] = xaf.plot_xsec(wvn,
+                                    MaxT, [],
+                                    axs6[2],
+                                    xlim=None,
+                                    xlabel=None,
+                                    ylabel=ylabel,
                                     plot_title=plot_title)
 
             # minimum pressure of fit
             plot_title = 'Minimum pressure of fit'
             ylabel = '$p_{min}$ [hPa]'
-            axs6[3] = xaf.plot_xsec(wvn, MinP / 100, [], axs6[3], xlim=None, xlabel=None, ylabel=ylabel,
+            axs6[3] = xaf.plot_xsec(wvn,
+                                    MinP / 100, [],
+                                    axs6[3],
+                                    xlim=None,
+                                    xlabel=None,
+                                    ylabel=ylabel,
                                     plot_title=plot_title)
             # axs6[3].set_yscale('log')
 
             # maximum temperature of fit
             plot_title = 'Maximum pressure of fit'
             ylabel = '$p_{min}$ [hPa]'
-            axs6[4] = xaf.plot_xsec(wvn, MaxP / 100, [], axs6[4], xlim=None, xlabel=xlabel, ylabel=ylabel,
+            axs6[4] = xaf.plot_xsec(wvn,
+                                    MaxP / 100, [],
+                                    axs6[4],
+                                    xlim=None,
+                                    xlabel=xlabel,
+                                    ylabel=ylabel,
                                     plot_title=plot_title)
             # axs6[4].set_yscale('log')
 
             plot_title = 'Goodness of fit'
             ylabel = '$R^2$'
             xlabel = 'Wavenumber [cm$^{-1}$]'
-            axs6[5] = xaf.plot_xsec(wvn, R2, [], axs6[5], xlim=None, xlabel=xlabel, ylabel=ylabel,
+            axs6[5] = xaf.plot_xsec(wvn,
+                                    R2, [],
+                                    axs6[5],
+                                    xlim=None,
+                                    xlabel=xlabel,
+                                    ylabel=ylabel,
                                     plot_title=plot_title)
 
             # %% show p-T dependency for some wavenumbers
@@ -671,13 +853,14 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             for i in range(len(P)):
                 Xsec_nu[i, :] = np.array(data[i]['xsec'])[index_wvn] * 1e4
 
-            Xsec_nu_fit = np.zeros((len(Ptest), len(Ttest), len(index_wvn))) * np.nan
+            Xsec_nu_fit = np.zeros(
+                (len(Ptest), len(Ttest), len(index_wvn))) * np.nan
 
             for ii in range(len(Ptest)):
                 for jj in range(len(Ttest)):
                     # %fitted spectrum
-                    xsec_fit = xaf.calculate_xsec_fullmodel(Ttest[jj], Ptest[ii],
-                                                            fit_coeffs[:, index_wvn])
+                    xsec_fit = xaf.calculate_xsec_fullmodel(
+                        Ttest[jj], Ptest[ii], fit_coeffs[:, index_wvn])
 
                     # Fitted Xsec in cm^-2
                     Xsec_nu_fit[ii, jj, :] = xsec_fit * 1e4
@@ -704,15 +887,29 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
                 cbar_label = '[cm$^2$]'
                 title = '$a_{xsec}$' + f'({wvn[index_wvn[i]]:.3f}' + 'cm$^{-1}$)'
 
-                fig7, ax, pcm, cbar = xaf.pcolor_plot(Ttest, Ptest / 100, Xsec_nu_fit[:, :, i], fig7, ax,
-                                                      np.percentile(Xsec_nu_fit[:, :, i], 1),
-                                                      np.percentile(Xsec_nu_fit[:, :, i], 99),
-                                                      xlabel=xlabel, ylabel=ylabel,
-                                                      cmap='temperature', title=title,
-                                                      cbar_label=cbar_label)
+                fig7, ax, pcm, cbar = xaf.pcolor_plot(
+                    Ttest,
+                    Ptest / 100,
+                    Xsec_nu_fit[:, :, i],
+                    fig7,
+                    ax,
+                    np.percentile(Xsec_nu_fit[:, :, i], 1),
+                    np.percentile(Xsec_nu_fit[:, :, i], 99),
+                    xlabel=xlabel,
+                    ylabel=ylabel,
+                    cmap='temperature',
+                    title=title,
+                    cbar_label=cbar_label)
 
-                ax.scatter(T, P / 100, 50, Xsec_nu[:, i], cmap='temperature', edgecolors='w',
-                           vmin=cbar.vmin, vmax=cbar.vmax, zorder=1e11)
+                ax.scatter(T,
+                           P / 100,
+                           50,
+                           Xsec_nu[:, i],
+                           cmap='temperature',
+                           edgecolors='w',
+                           vmin=cbar.vmin,
+                           vmax=cbar.vmax,
+                           zorder=1e11)
 
                 ax.invert_yaxis()
 
@@ -727,34 +924,46 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             if not os.path.exists(plotfolder):
                 os.makedirs(plotfolder)
 
-            plotname0 = os.path.join(plotfolder, species_arts + '.fit_and_obs_spectra.pdf')
+            plotname0 = os.path.join(plotfolder,
+                                     species_arts + '.fit_and_obs_spectra.pdf')
             fig0.savefig(plotname0)
 
-            plotname1 = os.path.join(plotfolder, species_arts + '.delta_xsec_spectra.pdf')
+            plotname1 = os.path.join(plotfolder,
+                                     species_arts + '.delta_xsec_spectra.pdf')
             fig1.savefig(plotname1)
 
-            plotname2 = os.path.join(plotfolder, species_arts + '.stat_overview.pdf')
+            plotname2 = os.path.join(plotfolder,
+                                     species_arts + '.stat_overview.pdf')
             fig2.savefig(plotname2)
 
-            plotname3 = os.path.join(plotfolder, species_arts + '.fit_coeffs.pdf')
+            plotname3 = os.path.join(plotfolder,
+                                     species_arts + '.fit_coeffs.pdf')
             fig3.savefig(plotname3)
 
-            plotname4 = os.path.join(plotfolder, species_arts + '.example_edge_case.pdf')
+            plotname4 = os.path.join(plotfolder,
+                                     species_arts + '.example_edge_case.pdf')
             fig4.savefig(plotname4)
 
-            plotname41 = os.path.join(plotfolder, species_arts + '.example_edge_case.Tderivative.pdf')
+            plotname41 = os.path.join(
+                plotfolder,
+                species_arts + '.example_edge_case.Tderivative.pdf')
             fig41.savefig(plotname41)
 
-            plotname42 = os.path.join(plotfolder, species_arts + '.example_edge_case.Pderivative.pdf')
+            plotname42 = os.path.join(
+                plotfolder,
+                species_arts + '.example_edge_case.Pderivative.pdf')
             fig42.savefig(plotname42)
 
-            plotname5 = os.path.join(plotfolder, species_arts + '.change_in_p.pdf')
+            plotname5 = os.path.join(plotfolder,
+                                     species_arts + '.change_in_p.pdf')
             fig5.savefig(plotname5)
 
-            plotname6 = os.path.join(plotfolder, species_arts + '.fit_limits.pdf')
+            plotname6 = os.path.join(plotfolder,
+                                     species_arts + '.fit_limits.pdf')
             fig6.savefig(plotname6)
 
-            plotname7 = os.path.join(plotfolder, species_arts + '.Xsec_nu_as_fcn_of_TP.pdf')
+            plotname7 = os.path.join(
+                plotfolder, species_arts + '.Xsec_nu_as_fcn_of_TP.pdf')
             fig7.savefig(plotname7)
 
             xaf.plt.close('all')
@@ -766,31 +975,33 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         # file identifier
         fid = '.nc'
 
-        
         os.makedirs(coeff_folder, exist_ok=True)
 
         coeff_file_name = os.path.join(coeff_folder, species_arts + fid)
 
         # pyarts.xml.save(xsec_record, coeff_file_name, precision='.14e', format='binary')
 
-        fitdata = xaf.store_fit_in_xarray(species_arts, Xsec_processed_data_array, min_temperatures,
-                                          max_temperatures, min_pressures, max_pressures)
+        fitdata = xaf.store_fit_in_xarray(species_arts,
+                                          Xsec_processed_data_array,
+                                          min_temperatures, max_temperatures,
+                                          min_pressures, max_pressures)
 
         fitdata.to_netcdf(coeff_file_name)
 
         if use_pyarts:
             fid_arts = '.xml'
-            coeff_folder_arts = coeff_folder[0:-1]+'_arts'
+            coeff_folder_arts = coeff_folder[0:-1] + '_arts'
 
-            
             os.makedirs(coeff_folder_arts, exist_ok=True)
 
-            coeff_file_name_arts = os.path.join(
-                coeff_folder_arts, species_arts + fid_arts)
+            coeff_file_name_arts = os.path.join(coeff_folder_arts,
+                                                species_arts + fid_arts)
 
             fitdata_pyarts = pyarts.classes.XsecRecord.from_xarray(fitdata)
-            pyarts.xml.save(fitdata_pyarts, coeff_file_name_arts,
-                            precision='.14e', format='binary')
+            pyarts.xml.save(fitdata_pyarts,
+                            coeff_file_name_arts,
+                            precision='.14e',
+                            format='binary')
 
         print('Saving coefficients')
 
@@ -858,18 +1069,19 @@ if __name__ == '__main__':
     if N_process == 1:
         print(f'Slow mode using {N_process:.0f}')
         for species in all_species:
-            process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plot_folder,
+            process_xsec_coefficients(species,
+                                      harmonized_folder,
+                                      coeff_folder,
+                                      main_plot_folder,
                                       store_coeffs=store_coeffs,
                                       plotting=plotting)
     elif N_process > 1:
         print(f'Turbo mode using {N_process:.0f} in parallel')
         with mp.Pool(processes=N_process) as pool:
-            pool.starmap(
-                process_xsec_coefficients,
-                ((species, harmonized_folder, coeff_folder, main_plot_folder,
-                  store_coeffs, plotting)
-                 for species in all_species)
-            )
+            pool.starmap(process_xsec_coefficients,
+                         ((species, harmonized_folder, coeff_folder,
+                           main_plot_folder, store_coeffs, plotting)
+                          for species in all_species))
     else:
         print('Doh!')
         raise ValueError("Number of processes is smaller than 1")

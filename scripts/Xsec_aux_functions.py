@@ -15,7 +15,6 @@ import matplotlib.patches as ptch
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray
-import pyarts
 from datetime import datetime
 from matplotlib.font_manager import FontProperties
 from scipy.interpolate import interp1d
@@ -25,7 +24,6 @@ from scipy.linalg import lstsq
 
 # speed of light
 c0 = 299792458.0  # [m/s]
-
 
 # %% fit related functions
 
@@ -58,7 +56,7 @@ def fit_poly21(xdata, ydata, zdata):
     M = np.ones((len(xdata), 4))
     M[:, 1] = xdata  # p01
     M[:, 2] = ydata  # p10
-    M[:, 3] = xdata ** 2  # p20
+    M[:, 3] = xdata**2  # p20
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -127,7 +125,7 @@ def fit_poly2(xdata, zdata):
 
     M = np.ones((len(xdata), 3))
     M[:, 1] = xdata  # p1
-    M[:, 2] = xdata ** 2  # p2
+    M[:, 2] = xdata**2  # p2
 
     poly, res, rnk, s = lstsq(M, zdata)
 
@@ -184,8 +182,8 @@ def calc_Rsquare(y, yfit, Ncoeffs):
 
     Delta_y = y - yfit
     Var_y = y - np.nanmean(y)
-    SSE = np.nansum(Delta_y ** 2)
-    SST = np.nansum(Var_y ** 2)
+    SSE = np.nansum(Delta_y**2)
+    SST = np.nansum(Var_y**2)
     n = len(y)
 
     if SST == 0 or (n - Ncoeffs) == 0:
@@ -232,7 +230,7 @@ def calculate_xsec(T, P, coeffs):
         poly[0] = 1
         poly[1] = T
         poly[2] = P
-        poly[3] = T ** 2
+        poly[3] = T**2
 
         # allocate
         Xsec = np.zeros(np.shape(coeffs))
@@ -246,7 +244,7 @@ def calculate_xsec(T, P, coeffs):
         poly[0, :] = 1.
         poly[1, :] = T
         poly[2, :] = P
-        poly[3, :] = T ** 2
+        poly[3, :] = T**2
 
         # allocate
         Xsec = np.zeros((len(coeffs), len(T)))
@@ -361,7 +359,13 @@ def xsec_derivative(T, P, coeffs):
     return DxsecDT, DxsecDp
 
 
-def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40., cnt_limit=2, k_outlier=1.5):
+def fit_xsec_data(T,
+                  P,
+                  Xsec,
+                  min_deltaP=80000,
+                  min_deltaT=40.,
+                  cnt_limit=2,
+                  k_outlier=1.5):
     '''
     FUnction to calculate the fit of the xsec at an arbitrary frequency
 
@@ -429,8 +433,8 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40., cnt_limit=2, k_o
         while cnt < cnt_limit:
 
             # quadratic fit in temperature and linear in pressure
-            if (Delta_P >= min_deltaP and Delta_T > 2 * min_deltaT and Ndata > 5
-                    and N_Tunique > 4 and N_Punique > 1):
+            if (Delta_P >= min_deltaP and Delta_T > 2 * min_deltaT
+                    and Ndata > 5 and N_Tunique > 4 and N_Punique > 1):
 
                 p, res, rnk, s = fit_poly21(xData, yData, zData)
 
@@ -483,7 +487,7 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40., cnt_limit=2, k_o
                 coeffs = np.zeros(4)
                 coeffs[0] = np.median(zData)
 
-                res = np.sum((zData - coeffs[0]) ** 2)
+                res = np.sum((zData - coeffs[0])**2)
                 rnk = np.nan
                 s = np.nan
 
@@ -494,7 +498,9 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40., cnt_limit=2, k_o
                 residuals = zData_fit - zData
 
                 # Check for outlier
-                logic_out = np.logical_and(abs(residuals) > np.std(zData) * k_outlier, np.std(zData) > 0.)
+                logic_out = np.logical_and(
+                    abs(residuals) > np.std(zData) * k_outlier,
+                    np.std(zData) > 0.)
 
                 if np.sum(logic_out) > 0:
                     cnt += 1
@@ -544,57 +550,69 @@ def fit_xsec_data(T, P, Xsec, min_deltaP=80000, min_deltaT=40., cnt_limit=2, k_o
     return fit_result
 
 
-def store_fit_in_xarray(species, xsecfitdata, fitmintemperatures, fiaxintemperatures, fitminpressures, fitmaxpressures,version=2):
-        """Store fitdata to xarray dataset"""
-        attrs = {'creation_date': str(datetime.now())}
-        coords = {
-            "coeffs": ("coeffs", range(4), {
-                "unit": "1",
-                "long_name": "Coefficients p00, p10, p01, p20"
-            }),
-            "bands": ("bands", range(len(xsecfitdata)), {
-                "unit": "1",
-                "long_name": "Band indices"
-            })
-        }
-
-        data_vars = {}
-        data_vars["fitminpressures"] = ("bands", fitminpressures, {
-            "unit": "Pa",
-            "long_name": "Mininum pressures from fit"
+def store_fit_in_xarray(species,
+                        xsecfitdata,
+                        fitmintemperatures,
+                        fiaxintemperatures,
+                        fitminpressures,
+                        fitmaxpressures,
+                        version=2):
+    """Store fitdata to xarray dataset"""
+    attrs = {'creation_date': str(datetime.now())}
+    coords = {
+        "coeffs": ("coeffs", range(4), {
+            "unit": "1",
+            "long_name": "Coefficients p00, p10, p01, p20"
+        }),
+        "bands": ("bands", range(len(xsecfitdata)), {
+            "unit": "1",
+            "long_name": "Band indices"
         })
-        data_vars["fitmaxpressures"] = ("bands", fitmaxpressures, {
-            "unit": "Pa",
-            "long_name": "Maximum pressures from fit"
-        })
-        data_vars["fitmintemperatures"] = ("bands", fitmintemperatures, {
-            "unit": "K",
-            "long_name": "Minimum temperatures from fit"
-        })
-        data_vars["fitmaxtemperatures"] = ("bands", fiaxintemperatures, {
-            "unit": "K",
-            "long_name": "Maximum temperatures from fit"
-        })
+    }
 
-        for i, band in enumerate(xsecfitdata):
-            coords[f"band{i}_fgrid"] = (f"band{i}_fgrid", band['grids'][0], {
-                "unit": "Hz",
-                "long_name": f"Frequency grid for band {i}"
-            })
-            data_vars[f"band{i}_coeffs"] = ([f"band{i}_fgrid", "coeffs"], band['data'], {
-                'unit':
-                "m",
-                'long_name':
-                f'Fit coefficients for band {i}'
-            })
+    data_vars = {}
+    data_vars["fitminpressures"] = ("bands", fitminpressures, {
+        "unit": "Pa",
+        "long_name": "Mininum pressures from fit"
+    })
+    data_vars["fitmaxpressures"] = ("bands", fitmaxpressures, {
+        "unit": "Pa",
+        "long_name": "Maximum pressures from fit"
+    })
+    data_vars["fitmintemperatures"] = ("bands", fitmintemperatures, {
+        "unit":
+        "K",
+        "long_name":
+        "Minimum temperatures from fit"
+    })
+    data_vars["fitmaxtemperatures"] = ("bands", fiaxintemperatures, {
+        "unit":
+        "K",
+        "long_name":
+        "Maximum temperatures from fit"
+    })
 
-        attrs["species"] = str(species)
-        attrs["version"] = version
+    for i, band in enumerate(xsecfitdata):
+        coords[f"band{i}_fgrid"] = (f"band{i}_fgrid", band['grids'][0], {
+            "unit": "Hz",
+            "long_name": f"Frequency grid for band {i}"
+        })
+        data_vars[f"band{i}_coeffs"] = ([f"band{i}_fgrid",
+                                         "coeffs"], band['data'], {
+                                             'unit':
+                                             "m",
+                                             'long_name':
+                                             f'Fit coefficients for band {i}'
+                                         })
 
-        return xarray.Dataset(data_vars, coords, attrs)    
+    attrs["species"] = str(species)
+    attrs["version"] = version
+
+    return xarray.Dataset(data_vars, coords, attrs)
 
 
 # %% Apllication functions
+
 
 def get_coeff_species(coefficients_folder):
     '''
@@ -643,7 +661,10 @@ def load_xsec_data(species, coeff_folder):
     return xsec_data
 
 
-def calculate_cross_sections(wvn_user, xsec_data, temperature=273., pressure=1013e2):
+def calculate_cross_sections(wvn_user,
+                             xsec_data,
+                             temperature=273.,
+                             pressure=1013e2):
     '''
     Calculates absorption cross sections for desired wavenumbers.
 
@@ -665,23 +686,26 @@ def calculate_cross_sections(wvn_user, xsec_data, temperature=273., pressure=101
 
     xsec_user = np.zeros(np.shape(wvn_user))
 
-    bands=xsec_data.bands.data
-    
+    bands = xsec_data.bands.data
+
     for m in bands:
-        
-        arg=f'band{m}'
-        
+
+        arg = f'band{m}'
+
         # frequency of data in [Hz]
-        freq_data = xsec_data[arg+'_fgrid'].data.transpose()
-    
+        freq_data = xsec_data[arg + '_fgrid'].data.transpose()
+
         # fit coefficients of band m
-        coeffs_m = xsec_data[arg+'_coeffs'].data.transpose()
+        coeffs_m = xsec_data[arg + '_coeffs'].data.transpose()
 
         # Calculate the cross section on their internal frequency grid
         xsec_temp = calculate_xsec_fullmodel(temperature, pressure, coeffs_m)
 
         # Interpolate cross sections to user grid
-        f_int = interp1d(freq_data, xsec_temp, fill_value=0., bounds_error=False)
+        f_int = interp1d(freq_data,
+                         xsec_temp,
+                         fill_value=0.,
+                         bounds_error=False)
         xsec_user_m = f_int(freq_user)
 
         xsec_user = xsec_user + xsec_user_m
@@ -690,6 +714,7 @@ def calculate_cross_sections(wvn_user, xsec_data, temperature=273., pressure=101
 
 
 # %% aux function
+
 
 def find_nearest(a, a0):
     '''
@@ -769,7 +794,8 @@ def suggest_banddefinition(wvn_intervalls, dws):
 
         if np.sum(ol_i) > 0:
             # get minimum dw per band (highest resolution)
-            dw_i = np.min([dws[j] for j in range(number_of_sets) if ol_i[j] > 0])
+            dw_i = np.min(
+                [dws[j] for j in range(number_of_sets) if ol_i[j] > 0])
 
             # Check for too small bands. A band needs at least 2 points.
             # This means dw_i must <= band_end-band_start
@@ -796,7 +822,9 @@ def suggest_banddefinition(wvn_intervalls, dws):
         marker[i + 1] = cnt
 
     for i in range(cnt + 1):
-        temp = [band_limits[j] for j in range(len(band_limits)) if marker[j] == i]
+        temp = [
+            band_limits[j] for j in range(len(band_limits)) if marker[j] == i
+        ]
 
         band_limits_final.append([np.min(temp), np.max(temp)])
 
@@ -804,6 +832,7 @@ def suggest_banddefinition(wvn_intervalls, dws):
 
 
 # %% plotting routines
+
 
 def cmap_matlab_lines():
     '''
@@ -814,8 +843,7 @@ def cmap_matlab_lines():
 
     '''
 
-    cmap = np.array([[0, 0.44701, 0.74101, 1],
-                     [0.85001, 0.32501, 0.09801, 1],
+    cmap = np.array([[0, 0.44701, 0.74101, 1], [0.85001, 0.32501, 0.09801, 1],
                      [0.92901, 0.69401, 0.12501, 1],
                      [0.49401, 0.18401, 0.55601, 1],
                      [0.46601, 0.67401, 0.18801, 1],
@@ -825,8 +853,13 @@ def cmap_matlab_lines():
     return cmap
 
 
-def default_figure(rows, columns, width_in_cm=29.7, height_in_cm=20.9,
-                   sharey='all', sharex='all', dpi=150):
+def default_figure(rows,
+                   columns,
+                   width_in_cm=29.7,
+                   height_in_cm=20.9,
+                   sharey='all',
+                   sharex='all',
+                   dpi=150):
     '''
     simple function to define basic properties of a figure
 
@@ -854,7 +887,11 @@ def default_figure(rows, columns, width_in_cm=29.7, height_in_cm=20.9,
 
     '''
 
-    fig, ax = plt.subplots(rows, columns, sharey=sharey, sharex=sharex, dpi=dpi)
+    fig, ax = plt.subplots(rows,
+                           columns,
+                           sharey=sharey,
+                           sharex=sharex,
+                           dpi=dpi)
     fig.set_size_inches(width_in_cm / 2.54, h=height_in_cm / 2.54)
 
     return fig, ax
@@ -916,9 +953,20 @@ def default_plot_format(ax, font_name=None):
     return ax, font
 
 
-def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
-              plot_title=None, legend=False, font_name=None, labels=['obs', 'fit'],
-              linewidth=0.25, fontsize=10, formatter=True):
+def plot_xsec(wvn,
+              Xsec,
+              XsecFit,
+              ax,
+              xlim=None,
+              xlabel=None,
+              ylabel=None,
+              plot_title=None,
+              legend=False,
+              font_name=None,
+              labels=['obs', 'fit'],
+              linewidth=0.25,
+              fontsize=10,
+              formatter=True):
     '''
     Wrapper to plot up to two cross sections in a plot. If only one cross section
     should be plotted set XsecFit to an empty list.
@@ -983,7 +1031,8 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
         ax.set_ylabel(ylabel, fontproperties=font)
 
     if plot_title != None:
-        ax.set_title(plot_title, fontproperties=font)  # Add a title to the axes.
+        ax.set_title(plot_title,
+                     fontproperties=font)  # Add a title to the axes.
         ax.title.set_fontsize(fontsize)
 
     if legend:
@@ -992,9 +1041,20 @@ def plot_xsec(wvn, Xsec, XsecFit, ax, xlim=None, xlabel=None, ylabel=None,
     return ax
 
 
-def scatter_plot(T, P, data, fig, ax, clim=None, xlabel='Temperature [K]',
-                 ylabel='Pressure [hPa]', plot_title='', cbar_label='', alpha=None,
-                 font_name=None, cmap='speed',MarkerSize=50):
+def scatter_plot(T,
+                 P,
+                 data,
+                 fig,
+                 ax,
+                 clim=None,
+                 xlabel='Temperature [K]',
+                 ylabel='Pressure [hPa]',
+                 plot_title='',
+                 cbar_label='',
+                 alpha=None,
+                 font_name=None,
+                 cmap='speed',
+                 MarkerSize=50):
     '''
 
     Args:
@@ -1040,12 +1100,17 @@ def scatter_plot(T, P, data, fig, ax, clim=None, xlabel='Temperature [K]',
     if clim == None:
         clim = [None, None]
 
-    
-    sca = ax.scatter(T, P / 100, MarkerSize, data, cmap=cmap, vmin=clim[0], vmax=clim[1],
+    sca = ax.scatter(T,
+                     P / 100,
+                     MarkerSize,
+                     data,
+                     cmap=cmap,
+                     vmin=clim[0],
+                     vmax=clim[1],
                      alpha=alpha)
     # ax.set_yscale('log')
 
-    if len(cbar_label)>0:
+    if len(cbar_label) > 0:
         cbar = fig.colorbar(sca, ax=ax, shrink=1)
         cbar.set_label(cbar_label, fontproperties=font)
 
@@ -1056,8 +1121,19 @@ def scatter_plot(T, P, data, fig, ax, clim=None, xlabel='Temperature [K]',
     return fig, ax, sca
 
 
-def pcolor_plot(x, y, Z, fig, ax, minZ, maxZ, font_name=None, xlabel=None, ylabel=None,
-                cmap=None, title=None, cbar_label=None):
+def pcolor_plot(x,
+                y,
+                Z,
+                fig,
+                ax,
+                minZ,
+                maxZ,
+                font_name=None,
+                xlabel=None,
+                ylabel=None,
+                cmap=None,
+                title=None,
+                cbar_label=None):
     '''
     wrapper to plot a 2d field
 
@@ -1108,7 +1184,13 @@ def pcolor_plot(x, y, Z, fig, ax, minZ, maxZ, font_name=None, xlabel=None, ylabe
         cmap = plt.get_cmap("Blues")
 
     # make plot and add colorbar
-    pcm = ax.pcolormesh(x, y, Z, shading='nearest', cmap=cmap, vmin=minZ, vmax=maxZ)
+    pcm = ax.pcolormesh(x,
+                        y,
+                        Z,
+                        shading='nearest',
+                        cmap=cmap,
+                        vmin=minZ,
+                        vmax=maxZ)
     pcm.set_rasterized(True)
     cbar = fig.colorbar(pcm, ax=ax, shrink=1)
     # ax.set_yscale('log')
@@ -1123,8 +1205,13 @@ def pcolor_plot(x, y, Z, fig, ax, minZ, maxZ, font_name=None, xlabel=None, ylabe
     return fig, ax, pcm, cbar
 
 
-def make_band_patches(ax, bandwidths, verticalwidth, cmap=None, edgecolor='None',
-                      alpha=0.25, zorder=-1):
+def make_band_patches(ax,
+                      bandwidths,
+                      verticalwidth,
+                      cmap=None,
+                      edgecolor='None',
+                      alpha=0.25,
+                      zorder=-1):
     '''
     function to plot patches in plot to mark the band ranges
     Args:
@@ -1159,9 +1246,13 @@ def make_band_patches(ax, bandwidths, verticalwidth, cmap=None, edgecolor='None'
 
         color = cmap[idx, :]
 
-        patch = ptch.Rectangle((x[0], verticalwidth[0]), x[1] - x[0],
-                               verticalwidth[1] - verticalwidth[0], facecolor=color,
-                               alpha=alpha, edgecolor=edgecolor, zorder=zorder)
+        patch = ptch.Rectangle((x[0], verticalwidth[0]),
+                               x[1] - x[0],
+                               verticalwidth[1] - verticalwidth[0],
+                               facecolor=color,
+                               alpha=alpha,
+                               edgecolor=edgecolor,
+                               zorder=zorder)
 
         ax.add_patch(patch)
 
@@ -1192,7 +1283,10 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
 
     number_of_sets = len(xsec_data)
 
-    fig1, ax1 = default_figure(number_of_sets, 1, width_in_cm=20.9, height_in_cm=29.7)
+    fig1, ax1 = default_figure(number_of_sets,
+                               1,
+                               width_in_cm=20.9,
+                               height_in_cm=29.7)
 
     if number_of_sets == 1:
         ax1 = [ax1]
@@ -1210,7 +1304,8 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
 
             N_wvn.append(len(wvn))
 
-            dw_k = (xsec_data[j][k]['wmax'] - xsec_data[j][k]['wmin']) / len(xsec_data[j][k]['xsec'])
+            dw_k = (xsec_data[j][k]['wmax'] - xsec_data[j][k]['wmin']) / len(
+                xsec_data[j][k]['xsec'])
             dw.append(dw_k)
 
             XSECS = xsec_data[j][k]['xsec']
@@ -1231,8 +1326,10 @@ def plot_raw_data(xsec_data, species, font_name=None, max_num=10000):
         ax1[j].set_ylim(1e-24, 1e-15)
         ax1[j].grid(which='both', linestyle=':', linewidth=0.25)
         ax1[j].set_ylabel('$a_{xsec} $[cm$^2$]')
-        ax1[j].set_title(species + ': set ' + str(j) + '; $N_{obs}=$' + str(len(xsec_data[j])) +
-                         '; $N_{sample,max}=$' + f'{N_wvn}' + '; $dwvn_{min}=$' + rf'{dw:.3f}' + 'cm$^{-1}$')
+        ax1[j].set_title(species + ': set ' + str(j) + '; $N_{obs}=$' +
+                         str(len(xsec_data[j])) + '; $N_{sample,max}=$' +
+                         f'{N_wvn}' + '; $dwvn_{min}=$' + rf'{dw:.3f}' +
+                         'cm$^{-1}$')
         ax1[j].title.set_fontsize(8)
 
         if j == number_of_sets:
