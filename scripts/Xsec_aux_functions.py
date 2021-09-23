@@ -637,8 +637,8 @@ def load_xsec_data(species, coeff_folder):
         xsec_data (XsecRecord): Xsec data.
 
     '''
-    xsec_file = path.join(coeff_folder, f'{species}.xml')
-    xsec_data = pyarts.xml.load(xsec_file)
+    xsec_file = path.join(coeff_folder, f'{species}.nc')
+    xsec_data = xarray.open_dataset(xsec_file)
 
     return xsec_data
 
@@ -649,7 +649,7 @@ def calculate_cross_sections(wvn_user, xsec_data, temperature=273., pressure=101
 
     Args:
         wvn_user (Vector): Wavenumbers in [cm⁻¹].
-        xsec_data (XsecRecord): Xsec data.
+        xsec_data (Xarray): Xsec data.
         temperature (Float, optional): Temperature in [K]. Default to 273..
         pressure (Float, optional): Pressure in [Pa]. Default to 1013e2.
 
@@ -665,12 +665,17 @@ def calculate_cross_sections(wvn_user, xsec_data, temperature=273., pressure=101
 
     xsec_user = np.zeros(np.shape(wvn_user))
 
-    for m in range(len(xsec_data.fitcoeffs)):
+    bands=xsec_data.bands.data
+    
+    for m in bands:
+        
+        arg=f'band{m}'
+        
         # frequency of data in [Hz]
-        freq_data = xsec_data.fitcoeffs[m].grids[0].data
-
+        freq_data = xsec_data[arg+'_fgrid'].data.transpose()
+    
         # fit coefficients of band m
-        coeffs_m = xsec_data.fitcoeffs[m].data.data.transpose()
+        coeffs_m = xsec_data[arg+'_coeffs'].data.transpose()
 
         # Calculate the cross section on their internal frequency grid
         xsec_temp = calculate_xsec_fullmodel(temperature, pressure, coeffs_m)

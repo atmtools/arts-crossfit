@@ -766,8 +766,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
         # file identifier
         fid = '.nc'
 
-        if not os.path.exists(coeff_folder):
-            os.makedirs(coeff_folder)
+        
+        os.makedirs(coeff_folder, exist_ok=True)
 
         coeff_file_name = os.path.join(coeff_folder, species_arts + fid)
 
@@ -782,8 +782,8 @@ def process_xsec_coefficients(species, harmonized_folder, coeff_folder, main_plo
             fid_arts = '.xml'
             coeff_folder_arts = coeff_folder[0:-1]+'_arts'
 
-            if not os.path.exists(coeff_folder_arts):
-                os.makedirs(coeff_folder_arts)
+            
+            os.makedirs(coeff_folder_arts, exist_ok=True)
 
             coeff_file_name_arts = os.path.join(
                 coeff_folder_arts, species_arts + fid_arts)
