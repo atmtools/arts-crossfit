@@ -4,4 +4,4 @@ venv/
 .idea/
 /data/
 /plots/
-/coefficients/
+/coefficients*/
