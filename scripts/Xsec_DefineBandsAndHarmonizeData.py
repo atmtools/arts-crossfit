@@ -157,15 +157,17 @@ if new_config_flag == 1:
 
             input1 = 0
             if old_flag:
+                
+                old_idx=[i for i in range(len(config_list_old)) if config_list_old[i][0]==species][0]
 
                 print('Existing band definition')
-                for band_idx in range(len(config_list_old[cnt])-1):
+                for band_idx in range(len(config_list_old[old_idx])-1):
                     print(f"band: {band_idx:.0f}")
-                    print(config_list_old[cnt][band_idx+1])
+                    print(config_list_old[old_idx][band_idx+1])
 
                 if overview_flag == True:
                     for j in range(0, len(ax1)):
-                        ax1[j] = xaf.make_band_patches(ax1[j], config_list_old[cnt][1:],
+                        ax1[j] = xaf.make_band_patches(ax1[j], config_list_old[old_idx][1:],
                                                        [1e-24, 1e-15], edgecolor='None')
 
                     xaf.plt.show()
@@ -174,7 +176,7 @@ if new_config_flag == 1:
                 New_bands = int(input('==>>'))
 
                 if New_bands == 0:
-                    config_list[cnt] = config_list_old[cnt]
+                    config_list[cnt] = config_list_old[old_idx]
             else:
                 print('To define band limits type "1" or type "0" to skip')
                 New_bands = int(input('==>>'))
@@ -269,16 +271,55 @@ else:
 
 # %% harmonize data in frequency
 
+#show config list
+counter = -1
+print('   ')
+print('Select data to harmonize')
+print('   ')
+for config_i in config_list:
+    counter = counter + 1
+    dummy = f'{config_i[0]} ==>>  {counter}'
+    print(dummy)
+    
+print('\n')
+print('choose species to harmonize')
+print('type a number')
+print('or a list of numbers')
+print('or a range-array, but the incremenet must be one')
+print('or type "all" for all species.')
+index = input('==>>') 
+
+if index.lower() == "all":
+    selection=np.arange(0,len(config_list),dtype=int)
+else:
+    index = eval(index)
+
+    if np.size(index) == 1:
+        index = [index]
+
+    selection=index
+
+species_selected=[config_list[i][0] for i in selection]
+
+
+# %%
+
 print('   ')
 print('------------------------------------------------------------------')
 print('start harmonizing the data...')
 print('   ')
+
 
 for f_i in range(len(filelist)):
 
     filename = filelist[f_i]
     data_name = os.path.basename(filename)
     species = data_name.split('.')[0]
+    
+    
+    if not species in species_selected:
+        continue
+    
 
     print('   ')
     print('------------------------------------------------------------------')
@@ -369,6 +410,9 @@ for f_i in range(len(filelist)):
 
             # loop over spectra within band (data)
             for k in range(len(xsec_data[j])):
+                
+                
+                print(f'\n species {species} - band {i} - dataset {j} - observation {k}')
 
                 wmax_data = xsec_data[j][k]['wmax']
                 wmin_data = xsec_data[j][k]['wmin']
@@ -398,7 +442,7 @@ for f_i in range(len(filelist)):
                     logic_neg_data = xsec_data_jk < 0
 
                     if np.sum(logic_neg_data) > 0:
-                        print(str(np.sum(logic_neg_data)) + ' Negative x-sections encountered in data \n')
+                        print(str(np.sum(logic_neg_data)) + ' Negative x-sections encountered in data')
 
                     # set up interpolation object
                     fun = interp1d(wvn_data, xsec_data_jk, kind='linear', bounds_error=False)
@@ -449,10 +493,12 @@ for f_i in range(len(filelist)):
 
         # export harmonized data
         harmonized_data_name = species + '.band' + str(i) + '.xsec'
-
+        
+        print('...saving data')
+        
         with GzipFile(harmonized_folder + harmonized_data_name + '.json.gz', "w") as f:
             f.write(json.dumps(data_band_i).encode("utf-8"))
 
         # Uncomment for unzipped harmonized files (not used for the coefficient calculations)
-        with open(harmonized_folder + harmonized_data_name + '.json', 'w') as fout:
-            json.dump(data_band_i, fout)
+        # with open(harmonized_folder + harmonized_data_name + '.json', 'w') as fout:
+        #     json.dump(data_band_i, fout)

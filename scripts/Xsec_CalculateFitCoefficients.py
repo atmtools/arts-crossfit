@@ -133,7 +133,7 @@ def process_xsec_coefficients(species,
         for idx in range(len(wvn)):
 
             if idx % 5000 == 0:
-                print(str(idx))
+                print(f'{species} - band {band_no} - freq index {idx}')
 
             # allocate
             Xsec = np.zeros(len(data))
@@ -268,11 +268,11 @@ def process_xsec_coefficients(species,
                 selection = selection.astype(int)
                 index = idx[selection]
 
-            print('Start with plotting!')
+            print(f'{species}: Start with plotting!')
 
             # %% plot xsec for some points
 
-            print('Plotting fig0 ')
+            print(f'{species}: Plotting fig0 ')
 
             fig0, axs0 = xaf.default_figure(3, 3)
 
@@ -323,7 +323,7 @@ def process_xsec_coefficients(species,
 
             # %% plot differences for some points
 
-            print('Plotting fig1 ')
+            print(f'{species}: Plotting fig1 ')
 
             fig1, axs1 = xaf.default_figure(3, 3)
 
@@ -368,7 +368,7 @@ def process_xsec_coefficients(species,
 
             # %% plot overview
 
-            print('Plotting fig2')
+            print(f'{species}: Plotting fig2')
 
             fig2, axs2 = xaf.default_figure(3,
                                             3,
@@ -399,7 +399,7 @@ def process_xsec_coefficients(species,
                 clim=[-max_abs_bias, max_abs_bias],
                 plot_title='$bias$',
                 cbar_label='[cm$^2$]',
-                cmap='difference')
+                cmap='coolwarm')
 
             z13 = StDev * 1e4
             fig2, axs2[0, 2], _ = xaf.scatter_plot(
@@ -423,7 +423,7 @@ def process_xsec_coefficients(species,
                 clim=[z21_min, z21_max],
                 plot_title='$\int a_{xsec,obs,raw}$',
                 cbar_label='[cm$^2$ cm$^{-1}$]',
-                cmap='temperature')
+                cmap='magma')
 
             z22 = XsecIntFit
             fig2, axs2[1, 1], _ = xaf.scatter_plot(
@@ -435,7 +435,7 @@ def process_xsec_coefficients(species,
                 clim=[z21_min, z21_max],
                 plot_title='$\int a_{xsec,fit}$',
                 cbar_label='[cm$^2$ cm$^{-1}$]',
-                cmap='temperature')
+                cmap='magma')
 
             z23 = XsecIntFitFull
             fig2, axs2[1, 2], _ = xaf.scatter_plot(
@@ -447,7 +447,7 @@ def process_xsec_coefficients(species,
                 clim=[z21_min, z21_max],
                 plot_title='$\int a_{xsec,fit,full}$',
                 cbar_label='[cm$^2$ cm$^{-1}$]',
-                cmap='temperature')
+                cmap='magma')
 
             z31 = L_raw * 100
             fig2, axs2[2, 0], _ = xaf.scatter_plot(
@@ -471,7 +471,7 @@ def process_xsec_coefficients(species,
                 clim=[-z32_limit, z32_limit],
                 plot_title='$(\int a_{xsec,fit}/\int a_{xsec,obs,raw})-1$',
                 cbar_label='[$\\%$]',
-                cmap='difference')
+                cmap='coolwarm')
 
             z33 = dw_raw
             z33_limit = z33.max()
@@ -487,7 +487,7 @@ def process_xsec_coefficients(species,
 
             # %% plot coefficients
 
-            print('Plotting fig3')
+            print(f'{species}: Plotting fig3')
 
             fig3, axs3 = xaf.default_figure(np.size(fit_coeffs, axis=0),
                                             1,
@@ -526,7 +526,7 @@ def process_xsec_coefficients(species,
 
             # %% edge cases
 
-            print('Plotting fig4')
+            print(f'{species}: Plotting fig4')
 
             T_i = [np.min(MinT) * 0.9, np.max(MaxT) / 0.9]
             P_i = [10., np.min(MinP), np.max(MaxP)]
@@ -569,7 +569,7 @@ def process_xsec_coefficients(species,
 
             # %% edge cases T-derivative
 
-            print('Plotting fig4.1')
+            print(f'{species}: Plotting fig4.1')
 
             T_i = [np.min(MinT), np.max(MaxT)]
             P_i = [np.max([1., np.min(MinP)]), np.max([np.max(MaxP), 101325.])]
@@ -620,7 +620,7 @@ def process_xsec_coefficients(species,
 
             # %% edge cases P-derivative
 
-            print('Plotting fig4.2')
+            print(f'{species}: Plotting fig4.2')
 
             fig42, axs42 = xaf.default_figure(len(T_i) * len(P_i),
                                               1,
@@ -666,7 +666,7 @@ def process_xsec_coefficients(species,
 
             # %% show full space
 
-            print('Plotting fig5')
+            print(f'{species}: Plotting fig5')
 
             Ptest = np.logspace(1, np.log10(101325), 200)
             Ttest = np.linspace(175, 325, 151)
@@ -700,7 +700,7 @@ def process_xsec_coefficients(species,
                                                            Xmean, 99),
                                                        xlabel=xlabel,
                                                        ylabel=ylabel,
-                                                       cmap='temperature',
+                                                       cmap='magma',
                                                        title=title,
                                                        cbar_label=cbar_label)
 
@@ -709,7 +709,7 @@ def process_xsec_coefficients(species,
                 P / 100,
                 50,
                 XsecInt,
-                cmap='temperature',  # edgecolors='w',
+                cmap='magma',  # edgecolors='w',
                 vmin=cbar.vmin,
                 vmax=cbar.vmax,
                 zorder=1e11)
@@ -755,7 +755,7 @@ def process_xsec_coefficients(species,
 
             # %% some fit meta information
 
-            print('Plotting fig6')
+            print(f'{species}: Plotting fig6')
 
             fig6, axs6 = xaf.default_figure(6,
                                             1,
@@ -835,7 +835,7 @@ def process_xsec_coefficients(species,
 
             # %% show p-T dependency for some wavenumbers
 
-            print('Plotting fig7')
+            print(f'{species}: Plotting fig7')
 
             # get frequency indices at nop positions uniformly distributed in amplitude
             # xsec_test = xaf.calculate_xsec_fullmodel(293.15, 101325.,fit_coeffs)
@@ -897,7 +897,7 @@ def process_xsec_coefficients(species,
                     np.percentile(Xsec_nu_fit[:, :, i], 99),
                     xlabel=xlabel,
                     ylabel=ylabel,
-                    cmap='temperature',
+                    cmap='magma',
                     title=title,
                     cbar_label=cbar_label)
 
@@ -905,7 +905,7 @@ def process_xsec_coefficients(species,
                            P / 100,
                            50,
                            Xsec_nu[:, i],
-                           cmap='temperature',
+                           cmap='magma',
                            edgecolors='w',
                            vmin=cbar.vmin,
                            vmax=cbar.vmax,
@@ -915,7 +915,7 @@ def process_xsec_coefficients(species,
 
             # %% save figures
 
-            print('Saving figures')
+            print(f'{species}: Saving figures')
 
             band_str = 'band_' + str(band_no)
 
@@ -1003,7 +1003,7 @@ def process_xsec_coefficients(species,
                             precision='.14e',
                             format='binary')
 
-        print('Saving coefficients')
+        print(f'{species}:  Saving coefficients')
 
 
 def parse_args():
