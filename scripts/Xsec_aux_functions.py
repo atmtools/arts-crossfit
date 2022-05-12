@@ -1053,7 +1053,7 @@ def scatter_plot(T,
                  cbar_label='',
                  alpha=None,
                  font_name=None,
-                 cmap='speed',
+                 cmap='YlGn',
                  MarkerSize=50):
     '''
 
