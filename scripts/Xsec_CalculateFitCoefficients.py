@@ -160,10 +160,10 @@ def process_xsec_coefficients(species,
         # frequency in Hz
         freq = wvn * xaf.c0 * 100
 
-        # s_data_temp = pyarts.classes.GriddedField2()
+        # s_data_temp = pyarts.arts.GriddedField2()
         # s_data_temp.gridnames = ['frequency grid [Hz]', 'fit coefficients [m]']
-        # s_data_temp.grids = [pyarts.classes.Vector(freq),
-        #                      pyarts.classes.ArrayOfString(['p00', 'p10', 'p01', 'p20'])]
+        # s_data_temp.grids = [pyarts.arts.Vector(freq),
+        #                      pyarts.arts.ArrayOfString(['p00', 'p10', 'p01', 'p20'])]
         # s_data_temp.data = fit_coeffs.transpose()
         # s_data_temp.name = (species + '-band_' + str(band_no))
         s_data_temp = {}
@@ -997,7 +997,7 @@ def process_xsec_coefficients(species,
             coeff_file_name_arts = os.path.join(coeff_folder_arts,
                                                 species_arts + fid_arts)
 
-            fitdata_pyarts = pyarts.classes.XsecRecord.from_xarray(fitdata)
+            fitdata_pyarts = pyarts.arts.XsecRecord.from_xarray(fitdata)
             pyarts.xml.save(fitdata_pyarts,
                             coeff_file_name_arts,
                             precision='.14e',
