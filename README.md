@@ -3,7 +3,7 @@ ARTS HITRAN cross section absorption model
 
 ## Calculate cross sections with the model
 
-1. Download the precalculated coefficients files from the `arts-xml-data` package and put them in the `coefficients/` directory.
+1. Download the precalculated coefficients files from the [`arts-cat-data`](https://www.radiativetransfer.org/tools/#arts-cat-data) package and put them in the `coefficients/` directory.
 
    To generate the coefficients yourself, see section ["Generate model coefficients"](#generate-model-coefficients) below.
 
